@@ -1,125 +1,202 @@
 // src/app/(app)/index.tsx
-import { useState } from "react";
+import { useFocusEffect } from "expo-router";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
+    ActivityIndicator,
+    Pressable,
     ScrollView,
     StyleSheet,
     Text,
-    TouchableOpacity,
     View,
 } from "react-native";
+import PagerView from "react-native-pager-view";
+import { getSchedule } from "../../api/schedule";
+import { Group, Lesson } from "../../api/types";
+import { getSelectedGroup } from "../../utils/storage";
 
-interface Day {
-  date: string;
-  day: string;
-}
-interface Lesson {
-  id: string;
-  start: string;
-  end: string;
-  type: string;
-  subject: string;
-  room: string;
-  teacher: string;
-}
+const DAYS_RU = [
+  "Понедельник",
+  "Вторник",
+  "Среда",
+  "Четверг",
+  "Пятница",
+  "Суббота",
+  "Воскресенье",
+];
+const DAYS_SHORT = ["пн", "вт", "ср", "чт", "пт", "сб", "вс"];
 
 export default function ScheduleScreen() {
-  const [selectedDay, setSelectedDay] = useState("16");
+  const [selectedGroup, setSelectedGroup] = useState<Group | null>(null);
+  const [schedule, setSchedule] = useState<Lesson[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(0);
+  const pagerRef = useRef<PagerView>(null);
+  const initialPageRef = useRef(0);
 
-  const days: Day[] = [
-    { date: "16", day: "Пн" },
-    { date: "17", day: "Вт" },
-    { date: "18", day: "Ср" },
-    { date: "19", day: "Чт" },
-    { date: "20", day: "Пт" },
-    { date: "21", day: "Сб" },
-  ];
+  useFocusEffect(
+    useCallback(() => {
+      let isActive = true;
 
-  const scheduleData: Lesson[] = [
-    {
-      id: "1",
-      start: "12:40",
-      end: "14:15",
-      type: "Лаб.",
-      subject: "R: программирование и анализ данных",
-      room: "113 (Ленина, 57)",
-      teacher: "Лазарева Ирина Михайловна",
-    },
-    {
-      id: "2",
-      start: "14:45",
-      end: "16:20",
-      type: "Лекц.",
-      subject: "Математическое моделирование",
-      room: "106 (Ленина, 57)",
-      teacher: "Богомолов Роман Анатольевич",
-    },
-    {
-      id: "3",
-      start: "16:30",
-      end: "18:05",
-      type: "Практ.",
-      subject: "Математическое моделирование",
-      room: "106 (Ленина, 57)",
-      teacher: "Богомолов Роман Анатольевич",
-    },
-  ];
+      const load = async () => {
+        try {
+          const group = await getSelectedGroup();
+          if (!isActive) return;
+
+          setSelectedGroup(group);
+
+          if (group) {
+            setIsLoading(true);
+            const today = new Date();
+            const monday = new Date(today);
+            monday.setDate(today.getDate() - ((today.getDay() + 6) % 7));
+            const start = monday.toISOString().split("T")[0];
+            const end = new Date(monday.getTime() + 6 * 24 * 60 * 60 * 1000)
+              .toISOString()
+              .split("T")[0];
+
+            const res = await getSchedule(group.UID, start, end);
+            if (!isActive) return;
+
+            setSchedule(res.timetable);
+
+            const dayIndex = (today.getDay() + 6) % 7;
+            const safeIndex = Math.min(dayIndex, 5);
+            initialPageRef.current = safeIndex;
+            setCurrentPage(safeIndex);
+          } else {
+            setSchedule([]);
+          }
+        } catch (e) {
+          console.error(e);
+        } finally {
+          if (isActive) setIsLoading(false);
+        }
+      };
+
+      load();
+
+      return () => {
+        isActive = false;
+      };
+    }, []),
+  );
+
+  useEffect(() => {
+    if (isLoading || !selectedGroup) return;
+    const idx = initialPageRef.current;
+    requestAnimationFrame(() => pagerRef.current?.setPage(idx));
+  }, [isLoading, selectedGroup]);
+
+  const getLessonsForDay = (dayIndex: number) => {
+    const dayName = DAYS_RU[dayIndex];
+    return schedule.filter((item) => item.day_of_week === dayName);
+  };
+
+  if (isLoading && schedule.length === 0) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>Расписание</Text>
+        </View>
+        <ActivityIndicator size="large" color="#0055A5" style={{ flex: 1 }} />
+      </View>
+    );
+  }
+
+  if (!selectedGroup) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>Расписание</Text>
+        </View>
+        <View style={styles.emptyContainer}>
+          <Text style={styles.emptyText}>
+            Сначала выберите группу в профиле
+          </Text>
+        </View>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Расписание</Text>
+        <Text style={styles.groupLabel}>{selectedGroup.group}</Text>
       </View>
 
       <View style={styles.daysContainer}>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{ paddingHorizontal: 15 }}
-        >
-          {days.map((item) => {
-            const isSelected = selectedDay === item.date;
-            return (
-              <TouchableOpacity
-                key={item.date}
-                style={[styles.dayBox, isSelected && styles.dayBoxActive]}
-                onPress={() => setSelectedDay(item.date)}
-              >
-                <Text
-                  style={[styles.dayText, isSelected && styles.dayTextActive]}
-                >
-                  {item.date}
-                </Text>
-                <Text
-                  style={[styles.dayName, isSelected && styles.dayNameActive]}
-                >
-                  {item.day}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
-        </ScrollView>
-      </View>
-
-      <View style={styles.subHeaderContainer}>
-        <Text style={styles.subHeader}>Расписание на сегодня</Text>
-      </View>
-
-      <ScrollView style={styles.listContainer}>
-        {scheduleData.map((item) => (
-          <View key={item.id} style={styles.scheduleItem}>
-            <View style={styles.timeColumn}>
-              <Text style={styles.startTime}>{item.start}</Text>
-              <Text style={styles.endTime}>{item.end}</Text>
-            </View>
-            <View style={styles.card}>
-              <Text style={styles.subject}>{item.subject}</Text>
-              <Text style={styles.type}>{item.type}</Text>
-              <Text style={styles.room}>{item.room}</Text>
-              <Text style={styles.teacher}>{item.teacher}</Text>
-            </View>
-          </View>
+        {DAYS_SHORT.slice(0, 6).map((day, i) => (
+          <Pressable
+            key={day}
+            style={({ pressed }) => [
+              styles.dayTab,
+              currentPage === i && styles.dayTabActive,
+              pressed && { opacity: 0.7 },
+            ]}
+            onPress={() => {
+              pagerRef.current?.setPage(i);
+            }}
+          >
+            <Text
+              style={[
+                styles.dayTabText,
+                currentPage === i && styles.dayTabTextActive,
+              ]}
+            >
+              {day}
+            </Text>
+          </Pressable>
         ))}
-      </ScrollView>
+      </View>
+
+      <PagerView
+        key={selectedGroup.UID}
+        ref={pagerRef}
+        style={styles.pager}
+        initialPage={initialPageRef.current}
+        onPageSelected={(e) => setCurrentPage(e.nativeEvent.position)}
+      >
+        {DAYS_RU.slice(0, 6).map((day, dayIndex) => {
+          const lessons = getLessonsForDay(dayIndex);
+          return (
+            <View key={day} style={styles.page}>
+              <Text style={styles.dayTitle}>{day}</Text>
+              {lessons.length === 0 ? (
+                <Text style={styles.emptyText}>Занятий нет</Text>
+              ) : (
+                <ScrollView
+                  style={styles.scroll}
+                  contentContainerStyle={styles.scrollContent}
+                  showsVerticalScrollIndicator={true}
+                >
+                  {lessons.map((item, index) => (
+                    <View
+                      key={`${item.date}-${item.slot}-${item.disciplines}-${index}`}
+                      style={styles.scheduleItem}
+                    >
+                      <View style={styles.timeColumn}>
+                        <Text style={styles.startTime}>
+                          {item.slot.split(" - ")[0]}
+                        </Text>
+                        <Text style={styles.endTime}>
+                          {item.slot.split(" - ")[1]}
+                        </Text>
+                      </View>
+                      <View style={styles.card}>
+                        <Text style={styles.subject}>{item.disciplines}</Text>
+                        <Text style={styles.detail}>{item.type}</Text>
+                        <Text style={styles.detail}>{item.room}</Text>
+                        <Text style={styles.teacher}>{item.teacher}</Text>
+                      </View>
+                    </View>
+                  ))}
+                </ScrollView>
+              )}
+            </View>
+          );
+        })}
+      </PagerView>
     </View>
   );
 }
@@ -133,40 +210,37 @@ const styles = StyleSheet.create({
     paddingBottom: 20,
   },
   headerTitle: { color: "white", fontSize: 20, fontWeight: "bold" },
+  groupLabel: { color: "rgba(255,255,255,0.8)", fontSize: 14, marginTop: 5 },
   daysContainer: {
+    flexDirection: "row",
+    justifyContent: "space-around",
     backgroundColor: "white",
     paddingVertical: 10,
     borderBottomWidth: 1,
     borderBottomColor: "#E0E0E0",
   },
-  dayBox: {
-    width: 50,
-    height: 60,
-    borderRadius: 25,
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: 10,
-    backgroundColor: "#F0F0F0",
+  dayTab: { paddingVertical: 8, paddingHorizontal: 10, borderRadius: 20 },
+  dayTabActive: { backgroundColor: "#0055A5" },
+  dayTabText: { fontSize: 14, fontWeight: "bold", color: "#333" },
+  dayTabTextActive: { color: "white" },
+  pager: { flex: 1 },
+  page: { flex: 1, padding: 15 },
+  dayTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#333",
+    marginBottom: 15,
+    textAlign: "center",
   },
-  dayBoxActive: { backgroundColor: "#0055A5" },
-  dayText: { fontSize: 16, fontWeight: "bold", color: "#333" },
-  dayTextActive: { color: "white" },
-  dayName: { fontSize: 12, color: "#666", marginTop: 2 },
-  dayNameActive: { color: "rgba(255,255,255,0.8)" },
-  subHeaderContainer: {
-    backgroundColor: "white",
-    marginTop: 15,
-    marginHorizontal: 15,
-    borderRadius: 15,
-    padding: 15,
-    alignItems: "center",
-    shadowColor: "#000",
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
-    elevation: 2,
+  scroll: { flex: 1 },
+  scrollContent: { paddingBottom: 20 },
+  emptyContainer: { flex: 1, justifyContent: "center", alignItems: "center" },
+  emptyText: {
+    textAlign: "center",
+    color: "#888",
+    fontSize: 14,
+    marginTop: 20,
   },
-  subHeader: { fontSize: 16, fontWeight: "bold", color: "#333" },
-  listContainer: { flex: 1, padding: 15 },
   scheduleItem: { flexDirection: "row", marginBottom: 15 },
   timeColumn: { width: 60, alignItems: "center", paddingTop: 10 },
   startTime: { fontSize: 16, fontWeight: "bold", color: "#333" },
@@ -184,16 +258,10 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     marginBottom: 5,
   },
-  type: { color: "rgba(255,255,255,0.8)", fontSize: 13, marginBottom: 5 },
-  room: {
-    color: "rgba(255,255,255,0.9)",
-    fontSize: 14,
-    fontWeight: "500",
-    marginBottom: 5,
-  },
+  detail: { color: "rgba(255,255,255,0.8)", fontSize: 13, marginBottom: 3 },
   teacher: {
     color: "rgba(255,255,255,0.8)",
-    fontSize: 13,
+    fontSize: 12,
     fontStyle: "italic",
   },
 });

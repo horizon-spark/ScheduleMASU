@@ -1,39 +1,168 @@
+// src/app/(app)/profile.tsx
+import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
+    ActivityIndicator,
+    Alert,
+    FlatList,
+    Modal,
     ScrollView,
     StyleSheet,
     Text,
-    TextInput,
     TouchableOpacity,
     View,
 } from "react-native";
-import { useAuth } from "../../context/AuthContext";
+import { getCourses, getFaculties, getGroups } from "../../api/schedule";
+import { Course, Faculty, Group } from "../../api/types";
+import { getSelectedGroup, saveSelectedGroup } from "../../utils/storage";
 
 export default function ProfileScreen() {
-  const { signOut } = useAuth();
   const router = useRouter();
 
-  const [isEditing, setIsEditing] = useState(false);
-  const [group, setGroup] = useState("БПМИ-УДМО-21");
-  const [tempGroup, setTempGroup] = useState(group);
+  // --- Данные для выбора ---
+  const [faculties, setFaculties] = useState<Faculty[]>([]);
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [groups, setGroups] = useState<Group[]>([]);
 
-  const handleEdit = () => {
-    setTempGroup(group);
-    setIsEditing(true);
+  // --- Выбранные значения ---
+  const [selectedFaculty, setSelectedFaculty] = useState<Faculty | null>(null);
+  const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
+  const [selectedGroup, setSelectedGroup] = useState<Group | null>(null);
+
+  // --- Модальные окна ---
+  const [modalType, setModalType] = useState<
+    "faculty" | "course" | "group" | null
+  >(null);
+
+  // --- Состояние загрузки ---
+  const [isLoading, setIsLoading] = useState(false);
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
+
+  // Загрузка факультетов и курсов + восстановление выбранной группы
+  useEffect(() => {
+    const init = async () => {
+      try {
+        setIsInitialLoading(true);
+        const [facRes, courseRes, savedGroup] = await Promise.all([
+          getFaculties(),
+          getCourses(),
+          getSelectedGroup(),
+        ]);
+        setFaculties(facRes.courses);
+        setCourses(courseRes.courses);
+        if (savedGroup) setSelectedGroup(savedGroup);
+      } catch (e) {
+        Alert.alert("Ошибка", "Не удалось загрузить данные");
+      } finally {
+        setIsInitialLoading(false);
+      }
+    };
+    init();
+  }, []);
+
+  // Загрузка групп при выборе факультета + курса
+  const loadGroups = async (facId: number, courseId: number) => {
+    try {
+      setIsLoading(true);
+      const res = await getGroups(facId, courseId);
+      setGroups(res.groups);
+    } catch (e) {
+      Alert.alert("Ошибка", "Не удалось загрузить группы");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleSave = () => {
-    setGroup(tempGroup);
-    setIsEditing(false);
+  const handleFacultySelect = async (faculty: Faculty) => {
+    setSelectedFaculty(faculty);
+    setModalType(null);
+    setSelectedGroup(null);
+    if (selectedCourse)
+      await loadGroups(faculty.fac_id, selectedCourse.course_id);
   };
 
-  const handleCancel = () => setIsEditing(false);
-
-  const handleLogout = async () => {
-    await signOut();
-    router.replace("/(auth)/login");
+  const handleCourseSelect = async (course: Course) => {
+    setSelectedCourse(course);
+    setModalType(null);
+    setSelectedGroup(null);
+    if (selectedFaculty)
+      await loadGroups(selectedFaculty.fac_id, course.course_id);
   };
+
+  const handleGroupSelect = async (group: Group) => {
+    setSelectedGroup(group);
+    setModalType(null);
+    await saveSelectedGroup(group); // Сохраняем в хранилище
+    Alert.alert("Сохранено", `Группа ${group.group} выбрана`);
+  };
+
+  const renderModal = () => {
+    let data: any[] = [];
+    let renderItem: any;
+    let onSelect: any;
+
+    if (modalType === "faculty") {
+      data = faculties;
+      renderItem = (item: Faculty) => item.facultee;
+      onSelect = handleFacultySelect;
+    } else if (modalType === "course") {
+      data = courses;
+      renderItem = (item: Course) => item.course;
+      onSelect = handleCourseSelect;
+    } else if (modalType === "group") {
+      data = groups;
+      renderItem = (item: Group) => item.group;
+      onSelect = handleGroupSelect;
+    }
+
+    return (
+      <Modal
+        visible={modalType !== null}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setModalType(null)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>
+              {modalType === "faculty"
+                ? "Выберите факультет"
+                : modalType === "course"
+                  ? "Выберите курс"
+                  : "Выберите группу"}
+            </Text>
+            <FlatList
+              data={data}
+              keyExtractor={(item, index) =>
+                `${item.fac_id ?? item.course_id ?? item.group_id ?? "item"}-${index}`
+              }
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  style={styles.modalItem}
+                  onPress={() => onSelect(item)}
+                >
+                  <Text style={styles.modalItemText}>{renderItem(item)}</Text>
+                </TouchableOpacity>
+              )}
+            />
+            <TouchableOpacity
+              style={styles.modalClose}
+              onPress={() => setModalType(null)}
+            >
+              <Text style={styles.modalCloseText}>Закрыть</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+    );
+  };
+
+  if (isInitialLoading) {
+    return (
+      <ActivityIndicator size="large" color="#0055A5" style={{ flex: 1 }} />
+    );
+  }
 
   return (
     <ScrollView style={styles.container}>
@@ -42,74 +171,73 @@ export default function ProfileScreen() {
       </View>
 
       <View style={styles.content}>
-        <TouchableOpacity style={styles.lkButton}>
-          <Text style={styles.lkButtonText}>Личный кабинет</Text>
-        </TouchableOpacity>
-
         <View style={styles.infoCard}>
           <Text style={styles.infoTitle}>Основная информация</Text>
-
           <View style={styles.infoRow}>
             <Text style={styles.label}>Полное имя</Text>
             <Text style={styles.value}>Денис Иванович Каравка</Text>
           </View>
           <View style={styles.divider} />
-
           <View style={styles.infoRow}>
             <Text style={styles.label}>Группа</Text>
-            {isEditing ? (
-              <TextInput
-                style={styles.input}
-                value={tempGroup}
-                onChangeText={setTempGroup}
-                placeholder="Введите группу"
-              />
-            ) : (
-              <Text style={styles.value}>{group}</Text>
-            )}
-          </View>
-          <View style={styles.divider} />
-
-          <View style={styles.infoRow}>
-            <Text style={styles.label}>Номер зачетной книжки</Text>
-            <Text style={styles.value}>Укажите номер зачетной книжки</Text>
+            <Text style={styles.value}>
+              {selectedGroup?.group || "Не выбрана"}
+            </Text>
           </View>
         </View>
 
-        <View style={styles.actions}>
-          {isEditing ? (
-            <>
-              <TouchableOpacity
-                style={[styles.actionButton, styles.cancelButton]}
-                onPress={handleCancel}
-              >
-                <Text style={styles.actionText}>Отмена</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.actionButton, styles.saveButton]}
-                onPress={handleSave}
-              >
-                <Text style={styles.actionText}>Сохранить</Text>
-              </TouchableOpacity>
-            </>
-          ) : (
-            <>
-              <TouchableOpacity
-                style={styles.actionButton}
-                onPress={handleEdit}
-              >
-                <Text style={styles.actionText}>Редактировать</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.actionButton}
-                onPress={handleLogout}
-              >
-                <Text style={styles.actionText}>Выйти</Text>
-              </TouchableOpacity>
-            </>
-          )}
+        {/* Блок настройки группы */}
+        <View style={styles.infoCard}>
+          <Text style={styles.infoTitle}>Настройка группы</Text>
+
+          <TouchableOpacity
+            style={styles.filterButton}
+            onPress={() => setModalType("faculty")}
+          >
+            <Text style={styles.filterLabel}>Факультет:</Text>
+            <Text style={styles.filterValue}>
+              {selectedFaculty?.facultee || "Выбрать"}
+            </Text>
+            <Ionicons name="chevron-down" size={18} color="#0055A5" />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.filterButton}
+            onPress={() => setModalType("course")}
+          >
+            <Text style={styles.filterLabel}>Курс:</Text>
+            <Text style={styles.filterValue}>
+              {selectedCourse?.course || "Выбрать"}
+            </Text>
+            <Ionicons name="chevron-down" size={18} color="#0055A5" />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.filterButton}
+            onPress={() => setModalType("group")}
+            disabled={!selectedFaculty || !selectedCourse || isLoading}
+          >
+            <Text style={styles.filterLabel}>Группа:</Text>
+            <Text style={styles.filterValue}>
+              {selectedGroup?.group || (isLoading ? "Загрузка..." : "Выбрать")}
+            </Text>
+            <Ionicons name="chevron-down" size={18} color="#0055A5" />
+          </TouchableOpacity>
         </View>
+
+        <TouchableOpacity
+          style={styles.logoutButton}
+          onPress={() => {
+            // очищаем группу и выходим
+            saveSelectedGroup(null);
+            router.replace("/(auth)/login");
+          }}
+        >
+          <Text style={styles.actionText}>Выйти</Text>
+        </TouchableOpacity>
       </View>
+
+      {renderModal()}
     </ScrollView>
   );
 }
@@ -124,14 +252,6 @@ const styles = StyleSheet.create({
   },
   headerTitle: { color: "white", fontSize: 20, fontWeight: "bold" },
   content: { padding: 15 },
-  lkButton: {
-    backgroundColor: "#F28C28",
-    padding: 15,
-    borderRadius: 25,
-    alignItems: "center",
-    marginBottom: 20,
-  },
-  lkButtonText: { color: "white", fontSize: 18, fontWeight: "bold" },
   infoCard: {
     backgroundColor: "white",
     borderRadius: 15,
@@ -142,25 +262,53 @@ const styles = StyleSheet.create({
   infoRow: { marginVertical: 5 },
   label: { fontSize: 14, color: "#666", marginBottom: 3 },
   value: { fontSize: 16, color: "#333", fontWeight: "500" },
-  input: {
-    borderWidth: 1,
-    borderColor: "#0055A5",
-    borderRadius: 8,
-    padding: 10,
-    fontSize: 16,
-    color: "#333",
-  },
   divider: { height: 1, backgroundColor: "#EEE", marginVertical: 10 },
-  actions: { flexDirection: "row", justifyContent: "space-between" },
-  actionButton: {
-    flex: 1,
+  filterButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: "#EEE",
+  },
+  filterLabel: { fontSize: 14, color: "#666", width: 90 },
+  filterValue: { flex: 1, fontSize: 16, color: "#333", fontWeight: "500" },
+  logoutButton: {
     backgroundColor: "#0055A5",
     padding: 15,
     borderRadius: 25,
     alignItems: "center",
-    marginHorizontal: 5,
   },
-  cancelButton: { backgroundColor: "#999" },
-  saveButton: { backgroundColor: "#0055A5" },
   actionText: { color: "white", fontSize: 16, fontWeight: "bold" },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "center",
+    padding: 20,
+  },
+  modalContent: {
+    backgroundColor: "white",
+    borderRadius: 15,
+    maxHeight: "70%",
+    padding: 20,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    marginBottom: 15,
+    textAlign: "center",
+  },
+  modalItem: {
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: "#EEE",
+  },
+  modalItemText: { fontSize: 16, color: "#333" },
+  modalClose: {
+    backgroundColor: "#0055A5",
+    padding: 15,
+    borderRadius: 25,
+    alignItems: "center",
+    marginTop: 15,
+  },
+  modalCloseText: { color: "white", fontWeight: "bold", fontSize: 16 },
 });
