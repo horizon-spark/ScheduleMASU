@@ -1,24 +1,32 @@
-// src/app/(app)/profile.tsx
+// app/(app)/profile.tsx
 import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import {
-    ActivityIndicator,
-    Alert,
-    FlatList,
-    Modal,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Alert,
+  FlatList,
+  Modal,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { getCourses, getFaculties, getGroups } from "../../api/schedule";
 import { Course, Faculty, Group } from "../../api/types";
-import { getSelectedGroup, saveSelectedGroup } from "../../utils/storage";
+import { useAuth } from "../../context/AuthContext";
+import {
+  clearProfileSelection,
+  getSelectedCourse,
+  getSelectedFaculty,
+  getSelectedGroup,
+  saveSelectedCourse,
+  saveSelectedFaculty,
+  saveSelectedGroup,
+} from "../../utils/storage";
 
 export default function ProfileScreen() {
-  const router = useRouter();
+  const { user, signOut } = useAuth();
 
   // --- Данные для выбора ---
   const [faculties, setFaculties] = useState<Faculty[]>([]);
@@ -38,20 +46,40 @@ export default function ProfileScreen() {
   // --- Состояние загрузки ---
   const [isLoading, setIsLoading] = useState(false);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
+  const [isSigningOut, setIsSigningOut] = useState(false);
 
-  // Загрузка факультетов и курсов + восстановление выбранной группы
+  // ============================================================
+  // Инициализация: справочники + восстановление сохранённого выбора
+  // ============================================================
   useEffect(() => {
     const init = async () => {
       try {
         setIsInitialLoading(true);
-        const [facRes, courseRes, savedGroup] = await Promise.all([
-          getFaculties(),
-          getCourses(),
-          getSelectedGroup(),
-        ]);
+
+        const [facRes, courseRes, savedFaculty, savedCourse, savedGroup] =
+          await Promise.all([
+            getFaculties(),
+            getCourses(),
+            getSelectedFaculty(),
+            getSelectedCourse(),
+            getSelectedGroup(),
+          ]);
+
         setFaculties(facRes.courses);
         setCourses(courseRes.courses);
+        if (savedFaculty) setSelectedFaculty(savedFaculty);
+        if (savedCourse) setSelectedCourse(savedCourse);
         if (savedGroup) setSelectedGroup(savedGroup);
+
+        // Если есть сохранённые факультет и курс — подгружаем список групп,
+        // чтобы модалка "Группа" была доступна сразу.
+        if (savedFaculty && savedCourse) {
+          const groupsRes = await getGroups(
+            savedFaculty.fac_id,
+            savedCourse.course_id,
+          );
+          setGroups(groupsRes.groups);
+        }
       } catch (e) {
         Alert.alert("Ошибка", "Не удалось загрузить данные");
       } finally {
@@ -61,7 +89,9 @@ export default function ProfileScreen() {
     init();
   }, []);
 
-  // Загрузка групп при выборе факультета + курса
+  // ============================================================
+  // Загрузка групп
+  // ============================================================
   const loadGroups = async (facId: number, courseId: number) => {
     try {
       setIsLoading(true);
@@ -74,29 +104,71 @@ export default function ProfileScreen() {
     }
   };
 
+  // ============================================================
+  // Обработчики выбора
+  // ============================================================
   const handleFacultySelect = async (faculty: Faculty) => {
     setSelectedFaculty(faculty);
     setModalType(null);
+    // Сброс зависимых значений
     setSelectedGroup(null);
-    if (selectedCourse)
+    await saveSelectedGroup(null);
+
+    if (selectedCourse) {
       await loadGroups(faculty.fac_id, selectedCourse.course_id);
+    }
+    await saveSelectedFaculty(faculty);
   };
 
   const handleCourseSelect = async (course: Course) => {
     setSelectedCourse(course);
     setModalType(null);
+    // Сброс зависимых значений
     setSelectedGroup(null);
-    if (selectedFaculty)
+    await saveSelectedGroup(null);
+
+    if (selectedFaculty) {
       await loadGroups(selectedFaculty.fac_id, course.course_id);
+    }
+    await saveSelectedCourse(course);
   };
 
   const handleGroupSelect = async (group: Group) => {
     setSelectedGroup(group);
     setModalType(null);
-    await saveSelectedGroup(group); // Сохраняем в хранилище
+    await saveSelectedGroup(group);
     Alert.alert("Сохранено", `Группа ${group.group} выбрана`);
   };
 
+  // ============================================================
+  // Выход
+  // ============================================================
+  const handleLogout = () => {
+    Alert.alert("Выход", "Вы уверены, что хотите выйти?", [
+      { text: "Отмена", style: "cancel" },
+      {
+        text: "Выйти",
+        style: "destructive",
+        onPress: async () => {
+          try {
+            setIsSigningOut(true);
+            await clearProfileSelection(); // факультет, курс, группа
+            await signOut(); // токен + user в AuthContext
+            // router.replace не нужен — RootNavigator сделает редирект
+            // при смене userToken на null
+          } catch (e) {
+            Alert.alert("Ошибка", "Не удалось выйти");
+          } finally {
+            setIsSigningOut(false);
+          }
+        },
+      },
+    ]);
+  };
+
+  // ============================================================
+  // Модалка выбора
+  // ============================================================
   const renderModal = () => {
     let data: any[] = [];
     let renderItem: any;
@@ -171,12 +243,24 @@ export default function ProfileScreen() {
       </View>
 
       <View style={styles.content}>
+        {/* === Основная информация === */}
         <View style={styles.infoCard}>
           <Text style={styles.infoTitle}>Основная информация</Text>
           <View style={styles.infoRow}>
             <Text style={styles.label}>Полное имя</Text>
-            <Text style={styles.value}>Денис Иванович Каравка</Text>
+            <Text style={styles.value}>
+              {user?.displayName || "Неизвестно"}
+            </Text>
           </View>
+          {user?.email ? (
+            <>
+              <View style={styles.divider} />
+              <View style={styles.infoRow}>
+                <Text style={styles.label}>Email</Text>
+                <Text style={styles.value}>{user.email}</Text>
+              </View>
+            </>
+          ) : null}
           <View style={styles.divider} />
           <View style={styles.infoRow}>
             <Text style={styles.label}>Группа</Text>
@@ -186,7 +270,7 @@ export default function ProfileScreen() {
           </View>
         </View>
 
-        {/* Блок настройки группы */}
+        {/* === Настройка группы === */}
         <View style={styles.infoCard}>
           <Text style={styles.infoTitle}>Настройка группы</Text>
 
@@ -225,15 +309,17 @@ export default function ProfileScreen() {
           </TouchableOpacity>
         </View>
 
+        {/* === Выход === */}
         <TouchableOpacity
-          style={styles.logoutButton}
-          onPress={() => {
-            // очищаем группу и выходим
-            saveSelectedGroup(null);
-            router.replace("/(auth)/login");
-          }}
+          style={[styles.logoutButton, isSigningOut && { opacity: 0.6 }]}
+          onPress={handleLogout}
+          disabled={isSigningOut}
         >
-          <Text style={styles.actionText}>Выйти</Text>
+          {isSigningOut ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <Text style={styles.actionText}>Выйти</Text>
+          )}
         </TouchableOpacity>
       </View>
 
