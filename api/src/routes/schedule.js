@@ -2,17 +2,23 @@ const express = require("express");
 const axios = require("axios");
 const crypto = require("crypto");
 const { requireAuth } = require("../middleware/auth");
+const { cached } = require("../cache");
 const config = require("../config");
 
-// Валидаторы параметров пути. Не даём мусору уходить во внешний API.
 const RE_UID = /^[A-Za-z0-9_-]{1,64}$/;
 const RE_DATE = /^\d{4}-\d{2}-\d{2}$/;
-const RE_ID = /^[A-Za-z0-9_-]{1,64}$/; // facId/courseId — на случай строковых slug'ов
+const RE_ID = /^[A-Za-z0-9_-]{1,64}$/;
+
+const TTL = {
+  faculties: 300,
+  courses: 300,
+  groups: 300,
+  schedule: 60,
+};
 
 function buildScheduleRouter() {
   const router = express.Router();
 
-  // Все маршруты ниже требуют валидный JWT
   router.use(requireAuth);
 
   const externalApi = axios.create({
@@ -25,7 +31,6 @@ function buildScheduleRouter() {
     },
   });
 
-  // Request-id для трассировки: свой, если клиент прислал, иначе генерим.
   externalApi.interceptors.request.use((cfg) => {
     cfg.headers["X-Request-Id"] =
       cfg.headers["X-Request-Id"] || crypto.randomUUID();
@@ -34,7 +39,10 @@ function buildScheduleRouter() {
 
   router.get("/faculties", async (req, res) => {
     try {
-      const { data } = await externalApi.get("/faculties");
+      const data = await cached("sched:faculties", TTL.faculties, async () => {
+        const r = await externalApi.get("/faculties");
+        return r.data;
+      });
       return res.json(data);
     } catch (err) {
       return handleExternalError(err, res, "faculties");
@@ -43,7 +51,10 @@ function buildScheduleRouter() {
 
   router.get("/courses", async (req, res) => {
     try {
-      const { data } = await externalApi.get("/courses");
+      const data = await cached("sched:courses", TTL.courses, async () => {
+        const r = await externalApi.get("/courses");
+        return r.data;
+      });
       return res.json(data);
     } catch (err) {
       return handleExternalError(err, res, "courses");
@@ -57,10 +68,14 @@ function buildScheduleRouter() {
         .status(400)
         .json({ success: false, message: "Invalid faculty/course id" });
     }
+    const key = `sched:groups:${facId}:${courseId}`;
     try {
-      const { data } = await externalApi.get(
-        `/faculties/${encodeURIComponent(facId)}/courses/${encodeURIComponent(courseId)}/groups`
-      );
+      const data = await cached(key, TTL.groups, async () => {
+        const r = await externalApi.get(
+          `/faculties/${encodeURIComponent(facId)}/courses/${encodeURIComponent(courseId)}/groups`
+        );
+        return r.data;
+      });
       return res.json(data);
     } catch (err) {
       return handleExternalError(err, res, "groups");
@@ -86,10 +101,14 @@ function buildScheduleRouter() {
         .json({ success: false, message: "start must be <= end" });
     }
 
+    const key = `sched:group:${uid}:${start}:${end}`;
     try {
-      const { data } = await externalApi.get(
-        `/groups/${encodeURIComponent(uid)}/schedule/${start}/${end}`
-      );
+      const data = await cached(key, TTL.schedule, async () => {
+        const r = await externalApi.get(
+          `/groups/${encodeURIComponent(uid)}/schedule/${start}/${end}`
+        );
+        return r.data;
+      });
       return res.json(data);
     } catch (err) {
       return handleExternalError(err, res, "schedule");
@@ -97,61 +116,6 @@ function buildScheduleRouter() {
   });
 
   return router;
-}
-
-// Единый обработчик ошибок внешнего API.
-// Внешние ошибки НЕ пробрасываются клиенту как есть — иначе мобилка
-// разлогинит пользователя на 401 от внешнего API.
-function handleExternalError(err, res, resource) {
-  const requestId = err.config?.headers?.["X-Request-Id"];
-  console.error(
-    `[ExternalAPI] ${resource} error`,
-    `requestId=${requestId || "-"}`,
-    `code=${err.code || "-"}`,
-    `status=${err.response?.status || "-"}`,
-    `msg=${err.message}`
-  );
-
-  if (err.code === "ECONNABORTED" || err.code === "ETIMEDOUT") {
-    return res.status(504).json({
-      success: false,
-      message: "External API timeout, retry later",
-    });
-  }
-
-  if (err.response) {
-    const s = err.response.status;
-
-    // Наш server-side bearer протух / невалиден — это НАША проблема.
-    if (s === 401 || s === 403) {
-      console.error(
-        `[ExternalAPI] auth failed for ${resource} — check SCHEDULE_API_BEARER_TOKEN`
-      );
-      return res.status(502).json({
-        success: false,
-        message: "Upstream auth misconfigured",
-      });
-    }
-
-    // Ресурс реально не найден — это можно отдать клиенту.
-    if (s === 404) {
-      return res.status(404).json({
-        success: false,
-        message: "Resource not found",
-      });
-    }
-
-    // 5xx внешнего API и 400/422 (наши параметры) — для клиента это 502.
-    return res.status(502).json({
-      success: false,
-      message: "External API error",
-    });
-  }
-
-  return res.status(502).json({
-    success: false,
-    message: "External API unavailable",
-  });
 }
 
 module.exports = { buildScheduleRouter };
