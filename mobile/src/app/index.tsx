@@ -3,7 +3,7 @@ import { ActivityIndicator, StyleSheet, View } from "react-native";
 import { useAuth } from "../context/AuthContext";
 
 export default function Index() {
-  const { userToken, isLoading } = useAuth();
+  const { accessToken, isLoading } = useAuth();
 
   if (isLoading) {
     return (
@@ -13,7 +13,7 @@ export default function Index() {
     );
   }
 
-  if (userToken) {
+  if (accessToken) {
     return <Redirect href="/(app)" />;
   }
 

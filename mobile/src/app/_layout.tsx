@@ -4,7 +4,7 @@ import { ActivityIndicator, View } from "react-native";
 import { AuthProvider, useAuth } from "../context/AuthContext";
 
 function RootNavigator() {
-  const { userToken, isLoading } = useAuth();
+  const { accessToken, isLoading } = useAuth();
   const segments = useSegments();
   const router = useRouter();
 
@@ -14,12 +14,12 @@ function RootNavigator() {
     // segments[0] — имя группы: "(auth)" или "(app)"
     const inAuthGroup = segments[0] === "(auth)";
 
-    if (!userToken && !inAuthGroup) {
+    if (!accessToken && !inAuthGroup) {
       router.replace("/(auth)/login");
-    } else if (userToken && inAuthGroup) {
+    } else if (accessToken && inAuthGroup) {
       router.replace("/(app)");
     }
-  }, [userToken, isLoading, segments]);
+  }, [accessToken, isLoading, segments]);
 
   if (isLoading) {
     return (

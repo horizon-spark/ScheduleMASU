@@ -1,22 +1,25 @@
-// src/context/authContext.tsx
+// src/context/AuthContext.tsx
 import * as SecureStore from "expo-secure-store";
 import {
   createContext,
   useCallback,
   useContext,
   useEffect,
+  useRef,
   useState,
 } from "react";
-import { loginRequest } from "../api/auth";
-import { setUnauthorizedHandler } from "../api/client";
-
-interface UserInfo {
-  displayName?: string;
-  email?: string;
-}
+import { loginRequest, logoutRequest, UserInfo } from "../api/auth";
+import {
+  ACCESS_KEY,
+  REFRESH_KEY,
+  setTokens,
+  setTokensRefreshedHandler,
+  setUnauthorizedHandler,
+  USER_KEY,
+} from "../api/client";
 
 interface AuthContextType {
-  userToken: string | null;
+  accessToken: string | null;
   user: UserInfo | null;
   signIn: (username: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
@@ -26,23 +29,28 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType>({} as AuthContextType);
 export const useAuth = () => useContext(AuthContext);
 
-const TOKEN_KEY = "userToken";
-const USER_KEY = "userInfo";
-
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
-  const [userToken, setUserToken] = useState<string | null>(null);
+  const [accessToken, setAccessToken] = useState<string | null>(null);
   const [user, setUser] = useState<UserInfo | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Загрузка сохранённой сессии при старте
+  // Не в state: нужен только для запросов и не участвует в рендере
+  const refreshTokenRef = useRef<string | null>(null);
+
+  // ── Восстановление сессии при старте ─────────────────────────
   useEffect(() => {
     (async () => {
       try {
-        const token = await SecureStore.getItemAsync(TOKEN_KEY);
-        const userJson = await SecureStore.getItemAsync(USER_KEY);
-        if (token) {
-          setUserToken(token);
-          if (userJson) setUser(userJson ? JSON.parse(userJson) : null);
+        const [a, r, u] = await Promise.all([
+          SecureStore.getItemAsync(ACCESS_KEY),
+          SecureStore.getItemAsync(REFRESH_KEY),
+          SecureStore.getItemAsync(USER_KEY),
+        ]);
+        if (a && r) {
+          refreshTokenRef.current = r;
+          setTokens({ accessToken: a, refreshToken: r });
+          setAccessToken(a);
+          if (u) setUser(JSON.parse(u));
         }
       } catch (e) {
         console.warn("Failed to load auth state", e);
@@ -52,34 +60,69 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     })();
   }, []);
 
-  // Связка с api-клиентом: при 401 сбрасываем состояние —
-  // RootNavigator сам уведёт на экран логина по userToken === null
+  // ── Связка с api-клиентом ────────────────────────────────────
   useEffect(() => {
+    // Refresh-провалился (401/REFRESH_REVOKED/REFRESH_EXPIRED) → разлогин
     setUnauthorizedHandler(() => {
-      setUserToken(null);
+      refreshTokenRef.current = null;
+      setTokens({ accessToken: null, refreshToken: null });
+      setAccessToken(null);
       setUser(null);
+      // SecureStore уже почищен в client.ts
     });
-    return () => setUnauthorizedHandler(null);
+
+    // Клиент успешно ротировал токены → сохраняем
+    setTokensRefreshedHandler(({ accessToken: a, refreshToken: r }) => {
+      refreshTokenRef.current = r;
+      setAccessToken(a);
+      SecureStore.setItemAsync(ACCESS_KEY, a).catch(() => {});
+      SecureStore.setItemAsync(REFRESH_KEY, r).catch(() => {});
+    });
+
+    return () => {
+      setUnauthorizedHandler(null);
+      setTokensRefreshedHandler(null);
+    };
   }, []);
 
+  // ── Вход ─────────────────────────────────────────────────────
   const signIn = useCallback(async (username: string, password: string) => {
-    const { token, user: u } = await loginRequest(username, password);
-    await SecureStore.setItemAsync(TOKEN_KEY, token);
-    await SecureStore.setItemAsync(USER_KEY, JSON.stringify(u ?? {}));
-    setUserToken(token);
+    const {
+      accessToken: a,
+      refreshToken: r,
+      user: u,
+    } = await loginRequest(username, password);
+
+    await Promise.all([
+      SecureStore.setItemAsync(ACCESS_KEY, a),
+      SecureStore.setItemAsync(REFRESH_KEY, r),
+      SecureStore.setItemAsync(USER_KEY, JSON.stringify(u ?? {})),
+    ]);
+
+    refreshTokenRef.current = r;
+    setTokens({ accessToken: a, refreshToken: r });
+    setAccessToken(a);
     setUser(u ?? null);
   }, []);
 
+  // ── Выход ────────────────────────────────────────────────────
   const signOut = useCallback(async () => {
-    await SecureStore.deleteItemAsync(TOKEN_KEY);
-    await SecureStore.deleteItemAsync(USER_KEY);
-    setUserToken(null);
+    // Сервер инвалидирует jti — важно до очистки локального refresh
+    await logoutRequest();
+    await Promise.all([
+      SecureStore.deleteItemAsync(ACCESS_KEY),
+      SecureStore.deleteItemAsync(REFRESH_KEY),
+      SecureStore.deleteItemAsync(USER_KEY),
+    ]);
+    refreshTokenRef.current = null;
+    setTokens({ accessToken: null, refreshToken: null });
+    setAccessToken(null);
     setUser(null);
   }, []);
 
   return (
     <AuthContext.Provider
-      value={{ userToken, user, signIn, signOut, isLoading }}
+      value={{ accessToken, user, signIn, signOut, isLoading }}
     >
       {children}
     </AuthContext.Provider>
