@@ -1,6 +1,7 @@
 const cluster = require("cluster");
 const os = require("os");
 const config = require("./src/config");
+const logger = require("./src/logger");
 
 const WORKERS =
   config.concurrency > 0 ? config.concurrency : os.availableParallelism();
@@ -10,8 +11,9 @@ async function startWorker() {
 
   const app = await createApp();
   const server = app.listen(config.port, "0.0.0.0", () => {
-    console.log(
-      `[worker ${process.pid}] listening on :${config.port} (env=${config.env})`
+    logger.info(
+      { port: config.port, env: config.env },
+      `[worker ${process.pid}] listening`
     );
   });
 
@@ -24,42 +26,48 @@ async function startWorker() {
 
   // Graceful shutdown.
   const shutdown = (signal) => {
-    console.log(`[worker ${process.pid}] ${signal} received, closing`);
+    logger.info({ signal }, `[worker ${process.pid}] closing`);
     server.close(() => process.exit(0));
+    // Закрываем простаивающие keep-alive соединения сразу, не ждём keepAliveTimeout
+    if (typeof server.closeIdleConnections === "function") {
+      server.closeIdleConnections();
+    }
     setTimeout(() => process.exit(1), 10_000).unref();
   };
   process.on("SIGTERM", () => shutdown("SIGTERM"));
   process.on("SIGINT", () => shutdown("SIGINT"));
 
   process.on("unhandledRejection", (err) => {
-    console.error("[worker] unhandledRejection:", err);
+    logger.error({ err }, "[worker] unhandledRejection");
   });
   process.on("uncaughtException", (err) => {
-    console.error("[worker] uncaughtException:", err);
+    logger.fatal({ err }, "[worker] uncaughtException");
     process.exit(1);
   });
 }
 
 if (cluster.isPrimary) {
-  console.log(`[primary ${process.pid}] forking ${WORKERS} workers`);
+  logger.info({ workers: WORKERS }, `[primary ${process.pid}] forking`);
   for (let i = 0; i < WORKERS; i++) cluster.fork();
 
   cluster.on("exit", (worker, code, signal) => {
-    console.error(
-      `[primary] worker ${worker.process.pid} died (code=${code}, signal=${signal}) — restarting`
+    logger.error(
+      { workerPid: worker.process.pid, code, signal },
+      "[primary] worker died — restarting"
     );
     cluster.fork();
   });
 
-  const shutdownPrimary = () => {
+  const shutdownPrimary = (signal) => {
+    logger.info({ signal }, "[primary] shutting down workers");
     for (const id in cluster.workers) cluster.workers[id].kill("SIGTERM");
     setTimeout(() => process.exit(0), 12_000).unref();
   };
-  process.on("SIGTERM", shutdownPrimary);
-  process.on("SIGINT", shutdownPrimary);
+  process.on("SIGTERM", () => shutdownPrimary("SIGTERM"));
+  process.on("SIGINT", () => shutdownPrimary("SIGINT"));
 } else {
   startWorker().catch((err) => {
-    console.error("[worker] failed to start:", err);
+    logger.fatal({ err }, "[worker] failed to start");
     process.exit(1);
   });
 }

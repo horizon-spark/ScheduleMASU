@@ -1,6 +1,5 @@
 const express = require("express");
 const axios = require("axios");
-const crypto = require("crypto");
 const { requireAuth } = require("../middleware/auth");
 const { cached } = require("../cache");
 const config = require("../config");
@@ -31,33 +30,37 @@ function buildScheduleRouter() {
     },
   });
 
+  // Request-id сквозной: берём req.id (его выставил requestLogger)
   externalApi.interceptors.request.use((cfg) => {
-    cfg.headers["X-Request-Id"] =
-      cfg.headers["X-Request-Id"] || crypto.randomUUID();
+    if (!cfg.headers["X-Request-Id"] && cfg.requestId) {
+      cfg.headers["X-Request-Id"] = cfg.requestId;
+    }
     return cfg;
   });
 
   router.get("/faculties", async (req, res) => {
     try {
       const data = await cached("sched:faculties", TTL.faculties, async () => {
-        const r = await externalApi.get("/faculties");
+        const r = await externalApi.get("/faculties", {
+          requestId: req.id,
+        });
         return r.data;
       });
       return res.json(data);
     } catch (err) {
-      return handleExternalError(err, res, "faculties");
+      return handleExternalError(err, req, res, "faculties");
     }
   });
 
   router.get("/courses", async (req, res) => {
     try {
       const data = await cached("sched:courses", TTL.courses, async () => {
-        const r = await externalApi.get("/courses");
+        const r = await externalApi.get("/courses", { requestId: req.id });
         return r.data;
       });
       return res.json(data);
     } catch (err) {
-      return handleExternalError(err, res, "courses");
+      return handleExternalError(err, req, res, "courses");
     }
   });
 
@@ -72,13 +75,14 @@ function buildScheduleRouter() {
     try {
       const data = await cached(key, TTL.groups, async () => {
         const r = await externalApi.get(
-          `/faculties/${encodeURIComponent(facId)}/courses/${encodeURIComponent(courseId)}/groups`
+          `/faculties/${encodeURIComponent(facId)}/courses/${encodeURIComponent(courseId)}/groups`,
+          { requestId: req.id }
         );
         return r.data;
       });
       return res.json(data);
     } catch (err) {
-      return handleExternalError(err, res, "groups");
+      return handleExternalError(err, req, res, "groups");
     }
   });
 
@@ -105,17 +109,70 @@ function buildScheduleRouter() {
     try {
       const data = await cached(key, TTL.schedule, async () => {
         const r = await externalApi.get(
-          `/groups/${encodeURIComponent(uid)}/schedule/${start}/${end}`
+          `/groups/${encodeURIComponent(uid)}/schedule/${start}/${end}`,
+          { requestId: req.id }
         );
         return r.data;
       });
       return res.json(data);
     } catch (err) {
-      return handleExternalError(err, res, "schedule");
+      return handleExternalError(err, req, res, "schedule");
     }
   });
 
   return router;
+}
+
+function handleExternalError(err, req, res, resource) {
+  const requestId = err.config?.headers?.["X-Request-Id"];
+  req.log.error(
+    {
+      resource,
+      requestId,
+      code: err.code,
+      status: err.response?.status,
+      err,
+    },
+    "[ExternalAPI] error"
+  );
+
+  if (err.code === "ECONNABORTED" || err.code === "ETIMEDOUT") {
+    return res.status(504).json({
+      success: false,
+      message: "External API timeout, retry later",
+    });
+  }
+
+  if (err.response) {
+    const s = err.response.status;
+
+    if (s === 401 || s === 403) {
+      req.log.error(
+        { resource },
+        "[ExternalAPI] auth failed — check SCHEDULE_API_BEARER_TOKEN"
+      );
+      return res.status(502).json({
+        success: false,
+        message: "Upstream auth misconfigured",
+      });
+    }
+
+    if (s === 404) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Resource not found" });
+    }
+
+    return res.status(502).json({
+      success: false,
+      message: "External API error",
+    });
+  }
+
+  return res.status(502).json({
+    success: false,
+    message: "External API unavailable",
+  });
 }
 
 module.exports = { buildScheduleRouter };

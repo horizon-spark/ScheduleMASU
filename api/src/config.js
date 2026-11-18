@@ -1,9 +1,11 @@
 require("dotenv").config();
 
+const logger = require("./logger");
+
 function required(name) {
   const v = process.env[name];
   if (!v) {
-    console.error(`[ENV] Missing required variable: ${name}`);
+    logger.fatal({ variable: name }, "[ENV] Missing required variable");
     process.exit(1);
   }
   return v;
@@ -14,7 +16,7 @@ function int(name, def) {
   if (v === undefined || v === "") return def;
   const n = Number(v);
   if (!Number.isFinite(n)) {
-    console.error(`[ENV] ${name} must be a number`);
+    logger.fatal({ variable: name, value: v }, "[ENV] must be a number");
     process.exit(1);
   }
   return n;

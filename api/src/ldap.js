@@ -1,6 +1,7 @@
 const passport = require("passport");
 const LdapStrategy = require("passport-ldapauth").Strategy;
 const config = require("./config");
+const logger = require("./logger");
 
 function setupPassport() {
   passport.use(
@@ -20,7 +21,7 @@ function setupPassport() {
     })
   );
 
-  console.log(`[LDAP] strategy configured for ${config.ldap.url}`);
+  logger.info({ url: config.ldap.url }, "[LDAP] strategy configured");
 }
 
 module.exports = { setupPassport, passport };

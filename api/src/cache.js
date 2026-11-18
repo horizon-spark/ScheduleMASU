@@ -1,4 +1,5 @@
 const { getRedis } = require("./redis");
+const logger = require("./logger");
 
 async function getJson(key) {
   const redis = await getRedis();
@@ -7,8 +8,8 @@ async function getJson(key) {
     const raw = await redis.get(key);
     return raw ? JSON.parse(raw) : null;
   } catch (e) {
-    console.warn("[cache] get failed:", key, e.message);
-    return null; // деградируем, не роняем запрос
+    logger.warn({ err: e, key }, "[cache] get failed");
+    return null;
   }
 }
 
@@ -18,16 +19,14 @@ async function setJson(key, value, ttlSec) {
   try {
     await redis.set(key, JSON.stringify(value), { EX: ttlSec });
   } catch (e) {
-    console.warn("[cache] set failed:", key, e.message);
+    logger.warn({ err: e, key }, "[cache] set failed");
   }
 }
 
-// Обёртка «get-or-fetch»: пробуем кэш, при промахе — fetcher, затем set.
 async function cached(key, ttlSec, fetcher) {
   const hit = await getJson(key);
   if (hit !== null) return hit;
   const value = await fetcher();
-  // Не кэшируем пустое/невалидное
   if (value !== undefined && value !== null) {
     await setJson(key, value, ttlSec);
   }

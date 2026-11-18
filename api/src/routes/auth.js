@@ -10,7 +10,7 @@ function buildAuthRouter({ loginLimiter }) {
   router.post("/login", loginLimiter, (req, res, next) => {
     passport.authenticate("ldapauth", { session: false }, (err, user, info) => {
       if (err) {
-        console.error("[LDAP] auth error:", err.message);
+        req.log.error({ err }, "[LDAP] auth error");
 
         const isTimeout =
           err.code === "ETIMEDOUT" ||
@@ -29,6 +29,10 @@ function buildAuthRouter({ loginLimiter }) {
       }
 
       if (!user) {
+        req.log.warn(
+          { username: req.body?.username },
+          "[LDAP] login failed"
+        );
         const msg =
           typeof info === "string"
             ? info
@@ -44,7 +48,11 @@ function buildAuthRouter({ loginLimiter }) {
 
       const token = jwt.sign(profile, config.jwt.secret, {
         expiresIn: config.jwt.expiresIn,
+        issuer: "ldap-auth-api",
+        audience: "mobile",
       });
+
+      req.log.info({ username: profile.username }, "[LDAP] login ok");
 
       return res.json({ success: true, token, user: profile });
     })(req, res, next);
