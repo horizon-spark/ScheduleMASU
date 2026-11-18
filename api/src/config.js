@@ -51,6 +51,12 @@ const config = {
   redis: {
     url: process.env.REDIS_URL || null,
   },
+
+  scheduleApi: {
+    url: required("SCHEDULE_API_URL"),
+    timeout: int("SCHEDULE_API_TIMEOUT_MS", 10000),
+    bearerToken: required("SCHEDULE_API_BEARER_TOKEN"),
+  },
 };
 
 module.exports = config;

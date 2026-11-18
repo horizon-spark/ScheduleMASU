@@ -6,6 +6,7 @@ const { setupPassport, passport } = require("./ldap");
 const { createLimiters } = require("./middleware/rateLimit");
 const { buildAuthRouter } = require("./routes/auth");
 const { buildHealthRouter } = require("./routes/health");
+const { buildScheduleRouter } = require("./routes/schedule");
 
 async function createApp() {
   setupPassport();
@@ -23,6 +24,7 @@ async function createApp() {
 
   app.use(buildHealthRouter());
   app.use("/api", apiLimiter, buildAuthRouter({ loginLimiter }));
+  app.use("/api", apiLimiter, buildScheduleRouter());
 
   app.use((req, res) => {
     res.status(404).json({ success: false, message: "Not found" });
