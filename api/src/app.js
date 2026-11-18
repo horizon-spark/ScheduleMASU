@@ -13,7 +13,6 @@ async function createApp() {
 
   const app = express();
 
-  // За Nginx: 1 хоп. Нужно для корректного req.ip в rate-limit.
   app.set("trust proxy", 1);
 
   app.use(cors());
@@ -23,8 +22,12 @@ async function createApp() {
   const { loginLimiter, apiLimiter } = await createLimiters();
 
   app.use(buildHealthRouter());
-  app.use("/api", apiLimiter, buildAuthRouter({ loginLimiter }));
-  app.use("/api", apiLimiter, buildScheduleRouter());
+
+  // apiLimiter — один раз на весь /api.
+  // loginLimiter — только на /api/auth/login (навешивается внутри buildAuthRouter).
+  app.use("/api", apiLimiter);
+  app.use("/api", buildAuthRouter({ loginLimiter }));
+  app.use("/api", buildScheduleRouter());
 
   app.use((req, res) => {
     res.status(404).json({ success: false, message: "Not found" });

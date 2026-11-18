@@ -5,6 +5,9 @@ const { getRedis } = require("../redis");
 async function buildStore(prefix) {
   const redis = await getRedis();
   if (!redis) return undefined;
+
+  // node-redis v4: sendCommand принимает МАССИВ аргументов.
+  // rate-limit-redis вызывает sendCommand("INCRBY", key, 1) — собираем обратно в массив.
   return new RedisStore({
     sendCommand: (...args) => redis.sendCommand(args),
     prefix,
@@ -28,8 +31,16 @@ async function createLimiters() {
     max: 10,
     standardHeaders: true,
     legacyHeaders: false,
+    // Успешный логин (<400) не должен съедать квоту.
+    skipSuccessfulRequests: true,
+    // Падение Redis не должно ронять /api.
+    passOnStoreError: true,
     message: { success: false, message: "Too many login attempts" },
-    keyGenerator: (req) => req.ip,
+    // Ключ: ip + username. Username нормализуем, чтобы "Ivan" и "ivan" считались одним.
+    keyGenerator: (req) => {
+      const username = String(req.body?.username || "").toLowerCase();
+      return `${req.ip}:${username}`;
+    },
   });
 
   const apiLimiter = rateLimit({
@@ -38,7 +49,9 @@ async function createLimiters() {
     max: 1000,
     standardHeaders: true,
     legacyHeaders: false,
+    passOnStoreError: true,
     message: { success: false, message: "Too many requests" },
+    // req.ip уже учитывает trust proxy 1 (X-Forwarded-For от Nginx).
     keyGenerator: (req) => req.ip,
   });
 
