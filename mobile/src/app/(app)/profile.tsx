@@ -28,60 +28,66 @@ import {
 export default function ProfileScreen() {
   const { user, signOut } = useAuth();
 
-  // --- Данные для выбора ---
   const [faculties, setFaculties] = useState<Faculty[]>([]);
   const [courses, setCourses] = useState<Course[]>([]);
   const [groups, setGroups] = useState<Group[]>([]);
 
-  // --- Выбранные значения ---
   const [selectedFaculty, setSelectedFaculty] = useState<Faculty | null>(null);
   const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
   const [selectedGroup, setSelectedGroup] = useState<Group | null>(null);
 
-  // --- Модальные окна ---
   const [modalType, setModalType] = useState<
     "faculty" | "course" | "group" | null
   >(null);
 
-  // --- Состояние загрузки ---
   const [isLoading, setIsLoading] = useState(false);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [isSigningOut, setIsSigningOut] = useState(false);
 
   // ============================================================
-  // Инициализация: справочники + восстановление сохранённого выбора
+  // Инициализация: справочники (критично) + сохранённый выбор (опционально)
   // ============================================================
   useEffect(() => {
     const init = async () => {
       try {
         setIsInitialLoading(true);
 
-        const [facRes, courseRes, savedFaculty, savedCourse, savedGroup] =
-          await Promise.all([
-            getFaculties(),
-            getCourses(),
-            getSelectedFaculty(),
-            getSelectedCourse(),
-            getSelectedGroup(),
-          ]);
-
+        // 1) Справочники — без них экран бесполезен
+        const [facRes, courseRes] = await Promise.all([
+          getFaculties(),
+          getCourses(),
+        ]);
         setFaculties(facRes.courses);
         setCourses(courseRes.courses);
+
+        // 2) Сохранённый выбор — не критичен, ошибки только логируем
+        const [savedFaculty, savedCourse, savedGroup] = await Promise.all([
+          getSelectedFaculty(),
+          getSelectedCourse(),
+          getSelectedGroup(),
+        ]);
         if (savedFaculty) setSelectedFaculty(savedFaculty);
         if (savedCourse) setSelectedCourse(savedCourse);
         if (savedGroup) setSelectedGroup(savedGroup);
 
-        // Если есть сохранённые факультет и курс — подгружаем список групп,
-        // чтобы модалка "Группа" была доступна сразу.
+        // 3) Группы для сохранённого выбора — тоже опционально
         if (savedFaculty && savedCourse) {
-          const groupsRes = await getGroups(
-            savedFaculty.fac_id,
-            savedCourse.course_id,
-          );
-          setGroups(groupsRes.groups);
+          try {
+            const groupsRes = await getGroups(
+              savedFaculty.fac_id,
+              savedCourse.course_id,
+            );
+            setGroups(groupsRes.groups);
+          } catch (e) {
+            console.warn("[profile] groups preload failed", e);
+          }
         }
-      } catch (e) {
-        Alert.alert("Ошибка", "Не удалось загрузить данные");
+      } catch (e: any) {
+        console.warn("[profile] init failed", e);
+        Alert.alert(
+          "Ошибка",
+          `Не удалось загрузить данные: ${e?.message ?? "неизвестно"}`,
+        );
       } finally {
         setIsInitialLoading(false);
       }
@@ -110,7 +116,6 @@ export default function ProfileScreen() {
   const handleFacultySelect = async (faculty: Faculty) => {
     setSelectedFaculty(faculty);
     setModalType(null);
-    // Сброс зависимых значений
     setSelectedGroup(null);
     await saveSelectedGroup(null);
 
@@ -123,7 +128,6 @@ export default function ProfileScreen() {
   const handleCourseSelect = async (course: Course) => {
     setSelectedCourse(course);
     setModalType(null);
-    // Сброс зависимых значений
     setSelectedGroup(null);
     await saveSelectedGroup(null);
 
@@ -152,8 +156,8 @@ export default function ProfileScreen() {
         onPress: async () => {
           try {
             setIsSigningOut(true);
-            await clearProfileSelection(); // факультет, курс, группа
-            await signOut(); // токен + user в AuthContext
+            await clearProfileSelection();
+            await signOut();
             // router.replace не нужен — RootNavigator сделает редирект
             // при смене userToken на null
           } catch (e) {

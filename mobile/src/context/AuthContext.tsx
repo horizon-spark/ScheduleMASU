@@ -1,3 +1,4 @@
+// src/context/authContext.tsx
 import * as SecureStore from "expo-secure-store";
 import {
   createContext,
@@ -7,6 +8,7 @@ import {
   useState,
 } from "react";
 import { loginRequest } from "../api/auth";
+import { setUnauthorizedHandler } from "../api/client";
 
 interface UserInfo {
   displayName?: string;
@@ -48,6 +50,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setIsLoading(false);
       }
     })();
+  }, []);
+
+  // Связка с api-клиентом: при 401 сбрасываем состояние —
+  // RootNavigator сам уведёт на экран логина по userToken === null
+  useEffect(() => {
+    setUnauthorizedHandler(() => {
+      setUserToken(null);
+      setUser(null);
+    });
+    return () => setUnauthorizedHandler(null);
   }, []);
 
   const signIn = useCallback(async (username: string, password: string) => {
