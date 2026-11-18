@@ -12,9 +12,16 @@ function requireAuth(req, res, next) {
 
   try {
     const payload = jwt.verify(token, config.jwt.secret, {
-      issuer: "ldap-auth-api",
-      audience: "mobile",
+      issuer: config.jwt.issuer,
+      audience: config.jwt.audience,
     });
+
+    // refresh-токен нельзя использовать как access
+    if (payload.type !== "access") {
+      req.log?.warn("[auth] wrong token type");
+      return res.status(401).json({ success: false, message: "Invalid token" });
+    }
+
     req.user = payload;
     return next();
   } catch (err) {

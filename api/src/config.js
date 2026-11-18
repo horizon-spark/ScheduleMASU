@@ -29,7 +29,11 @@ const config = {
 
   jwt: {
     secret: required("JWT_SECRET"),
-    expiresIn: process.env.JWT_EXPIRES_IN || "7d",
+    accessExpiresIn: process.env.JWT_ACCESS_EXPIRES_IN || "15m",
+    refreshExpiresIn: process.env.JWT_REFRESH_EXPIRES_IN || "30d",
+    refreshTtlSec: int("JWT_REFRESH_TTL_SEC", 30 * 24 * 60 * 60), // 30 дней в секундах
+    issuer: "ldap-auth-api",
+    audience: "mobile",
   },
 
   ldap: {
