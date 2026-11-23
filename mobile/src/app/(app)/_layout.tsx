@@ -1,5 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Tabs } from "expo-router";
+import { StatusBar } from "expo-status-bar";
 import type { ColorValue } from "react-native";
 
 /**
@@ -13,9 +14,11 @@ function toIconColor(color: ColorValue): string | undefined {
 
 export default function AppLayout() {
   return (
-    <Tabs
-      screenOptions={{ tabBarActiveTintColor: "#0055A5", headerShown: false }}
-    >
+    <>
+      <StatusBar style="light" />
+      <Tabs
+        screenOptions={{ tabBarActiveTintColor: "#0055A5", headerShown: false }}
+      >
       <Tabs.Screen
         name="index"
         options={{
@@ -42,6 +45,7 @@ export default function AppLayout() {
           ),
         }}
       />
-    </Tabs>
+      </Tabs>
+    </>
   );
 }
