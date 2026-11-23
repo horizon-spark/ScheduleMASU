@@ -6,7 +6,16 @@ const baseUrl = process.env.EXPO_PUBLIC_API_BASE_URL;
 if (!baseUrl) {
   throw new Error(
     "EXPO_PUBLIC_API_BASE_URL не задан. Укажите адрес прокси в .env " +
-      "(например: EXPO_PUBLIC_API_BASE_URL=http://192.168.1.10:3001)",
+      "(например: EXPO_PUBLIC_API_BASE_URL=https://schedule.example.ru/api)",
+  );
+}
+
+// В production обязателен HTTPS. HTTP допускается только в dev-клиенте
+// и в preview-сборке, где явно выставлен EXPO_PUBLIC_ALLOW_HTTP=1.
+const allowHttp = __DEV__ || process.env.EXPO_PUBLIC_ALLOW_HTTP === "1";
+if (!allowHttp && !baseUrl.startsWith("https://")) {
+  throw new Error(
+    "В production-сборке EXPO_PUBLIC_API_BASE_URL должен начинаться с https://",
   );
 }
 
