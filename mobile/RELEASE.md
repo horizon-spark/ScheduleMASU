@@ -16,13 +16,13 @@
 
 В EAS Environment Variables должны быть заданы:
 
-| Переменная | preview | production |
-|---|---|---|
-| `EXPO_PUBLIC_API_BASE_URL` | адрес прокси (можно HTTP, пока нет TLS) | **обязательно `https://…/api`** |
-| `EXPO_PUBLIC_ALLOW_HTTP` | `1` (только пока прокси без TLS) | не задавать |
-| `APP_VARIANT` | задаётся в `eas.json` | задаётся в `eas.json` |
+| Переменная | development | preview | production |
+|---|---|---|---|
+| `EXPO_PUBLIC_API_BASE_URL` | адрес прокси | адрес прокси (можно HTTP, пока нет TLS) | **обязательно `https://…/api`** |
+| `EXPO_PUBLIC_ALLOW_HTTP` | не задавать | `1` (только пока прокси без TLS) | не задавать |
+| `APP_VARIANT` | задаётся в `eas.json` | задаётся в `eas.json` | задаётся в `eas.json` |
 
-`app.config.js` не даст собрать production-APK, если URL отсутствует или не HTTPS. `src/api/client.ts` дополнительно проверяет это в рантайме.
+`app.config.js` не даст собрать ни один EAS-профиль без `EXPO_PUBLIC_API_BASE_URL`, а production — без HTTPS. `src/api/client.ts` дополнительно проверяет это в рантайме.
 
 ## 3. Сборка для RuStore
 

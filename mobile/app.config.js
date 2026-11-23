@@ -1,22 +1,23 @@
 // app.config.js
 // Динамический конфиг: production-сборка обязана использовать HTTPS,
 // а cleartext-трафик остаётся только для development/preview.
-const isProduction = process.env.APP_VARIANT === "production";
+const appVariant = process.env.APP_VARIANT;
+const isProduction = appVariant === "production";
+const isEasBuild = Boolean(appVariant);
 
 module.exports = ({ config }) => {
   const apiBaseUrl = process.env.EXPO_PUBLIC_API_BASE_URL;
 
-  if (isProduction) {
-    if (!apiBaseUrl) {
-      throw new Error(
-        "EXPO_PUBLIC_API_BASE_URL is required for production builds",
-      );
-    }
-    if (!apiBaseUrl.startsWith("https://")) {
-      throw new Error(
-        "EXPO_PUBLIC_API_BASE_URL must use https:// in production builds",
-      );
-    }
+  if (isEasBuild && !apiBaseUrl) {
+    throw new Error(
+      "EXPO_PUBLIC_API_BASE_URL is required for all EAS builds",
+    );
+  }
+
+  if (isProduction && !apiBaseUrl.startsWith("https://")) {
+    throw new Error(
+      "EXPO_PUBLIC_API_BASE_URL must use https:// in production builds",
+    );
   }
 
   const plugins = (config.plugins ?? []).map((plugin) => {
