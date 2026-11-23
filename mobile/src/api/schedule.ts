@@ -15,6 +15,12 @@ import {
 /** Безопасно подставляет значение в сегмент URL. */
 const seg = (value: string | number) => encodeURIComponent(String(value));
 
+type QueryOptions = { fresh?: boolean };
+
+/** `?fresh=1` — обойти кеш прокси (pull-to-refresh). */
+const freshParams = (options: QueryOptions) =>
+  options.fresh ? { params: { fresh: 1 } } : undefined;
+
 // ── Институты, курсы, группы ──────────────────────────────
 export const getFaculties = async (): Promise<FacultiesResponse> => {
   const { data } = await api.get("/faculties");
@@ -112,11 +118,11 @@ export const getSchedule = async (
   uid: string,
   start: string,
   end: string,
-  options: { fresh?: boolean } = {},
+  options: QueryOptions = {},
 ): Promise<ScheduleResponse> => {
   const { data } = await api.get(
     `/groups/${seg(uid)}/schedule/${seg(start)}/${seg(end)}`,
-    options.fresh ? { params: { fresh: 1 } } : undefined,
+    freshParams(options),
   );
   return data;
 };
@@ -140,9 +146,11 @@ export const getTeacherSchedule = async (
   uid: string,
   start: string,
   end: string,
+  options: QueryOptions = {},
 ): Promise<ScheduleResponse> => {
   const { data } = await api.get(
     `/teachers/${seg(uid)}/schedule/${seg(start)}/${seg(end)}`,
+    freshParams(options),
   );
   return data;
 };
@@ -152,9 +160,11 @@ export const getRoomSchedule = async (
   roomId: number,
   start: string,
   end: string,
+  options: QueryOptions = {},
 ): Promise<ScheduleResponse> => {
   const { data } = await api.get(
     `/rooms/${seg(roomId)}/schedule/${seg(start)}/${seg(end)}`,
+    freshParams(options),
   );
   return data;
 };

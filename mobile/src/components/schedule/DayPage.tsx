@@ -7,16 +7,24 @@ import {
   View,
 } from "react-native";
 import { Lesson } from "../../api/types";
+import type { ScheduleSubjectKind } from "../../types/schedule";
 import { LessonCard } from "./LessonCard";
 
 type Props = {
   dayTitle: string;
   lessons: Lesson[];
+  subjectKind: ScheduleSubjectKind;
   refreshing: boolean;
   onRefresh: () => void;
 };
 
-export function DayPage({ dayTitle, lessons, refreshing, onRefresh }: Props) {
+export function DayPage({
+  dayTitle,
+  lessons,
+  subjectKind,
+  refreshing,
+  onRefresh,
+}: Props) {
   return (
     <View style={styles.page}>
       <Text style={styles.dayTitle}>{dayTitle}</Text>
@@ -46,6 +54,7 @@ export function DayPage({ dayTitle, lessons, refreshing, onRefresh }: Props) {
             <LessonCard
               key={`${item.date}-${item.slot}-${item.disciplines}-${index}`}
               item={item}
+              subjectKind={subjectKind}
             />
           ))
         )}

@@ -21,11 +21,11 @@ type StoredSchedule = Omit<CachedSchedule, "version">;
 const memory = new Map<string, CachedSchedule>();
 
 export function makeScheduleCacheKey(
-  uid: string,
+  subjectKey: string,
   start: string,
   end: string,
 ): string {
-  return `${uid}:${start}:${end}`;
+  return `${subjectKey}:${start}:${end}`;
 }
 
 function isCachedSchedule(value: unknown): value is CachedSchedule {
