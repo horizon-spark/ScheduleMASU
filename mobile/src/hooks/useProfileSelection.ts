@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { Alert } from "react-native";
 import { getCourses, getFaculties, getGroups } from "../api/schedule";
 import { Course, Faculty, Group } from "../api/types";
+import { makeGroupSubject } from "../utils/subjects";
 import {
   getSelectedCourse,
   getSelectedFaculty,
@@ -10,6 +11,7 @@ import {
   saveSelectedCourse,
   saveSelectedFaculty,
   saveSelectedGroup,
+  saveSelectedSubject,
 } from "../utils/storage";
 
 export function useProfileSelection(onAfterSelect?: () => void) {
@@ -110,7 +112,10 @@ export function useProfileSelection(onAfterSelect?: () => void) {
 
   const selectGroup = async (group: Group) => {
     setSelectedGroup(group);
-    await saveSelectedGroup(group);
+    await Promise.all([
+      saveSelectedGroup(group),
+      saveSelectedSubject(makeGroupSubject(group)),
+    ]);
     onAfterSelect?.();
     Alert.alert("Сохранено", `Группа ${group.group} выбрана`);
   };
