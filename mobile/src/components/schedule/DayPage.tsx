@@ -86,7 +86,7 @@ const styles = StyleSheet.create({
   },
   updated: {
     textAlign: "center",
-    color: "#AAAAAA",
+    color: colors.textMuted,
     fontSize: 11,
     marginTop: spacing.sm,
     marginBottom: spacing.sm,
