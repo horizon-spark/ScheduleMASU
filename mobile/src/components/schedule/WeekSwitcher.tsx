@@ -9,6 +9,7 @@ type Props = {
   onPrev: () => void;
   onNext: () => void;
   onToday: () => void;
+  onPressRange: () => void;
 };
 
 export function WeekSwitcher({
@@ -17,6 +18,7 @@ export function WeekSwitcher({
   onPrev,
   onNext,
   onToday,
+  onPressRange,
 }: Props) {
   return (
     <View style={styles.container}>
@@ -31,9 +33,26 @@ export function WeekSwitcher({
       </Pressable>
 
       <View style={styles.center}>
-        <Text style={styles.range}>
-          {formatWeekRange(start)} · {getWeekParity(start)}
-        </Text>
+        <Pressable
+          onPress={onPressRange}
+          hitSlop={6}
+          accessibilityRole="button"
+          accessibilityLabel="Выбрать период"
+          style={({ pressed }) => [
+            styles.rangeButton,
+            pressed && styles.pressed,
+          ]}
+        >
+          <Text style={styles.range} numberOfLines={1}>
+            {formatWeekRange(start)} · {getWeekParity(start)}
+          </Text>
+          <Ionicons
+            name="chevron-down"
+            size={14}
+            color="#666"
+            style={styles.rangeChevron}
+          />
+        </Pressable>
         {isCurrentWeek ? (
           <Text style={styles.hint}>Текущая неделя</Text>
         ) : (
@@ -80,7 +99,9 @@ const styles = StyleSheet.create({
   },
   pressed: { opacity: 0.6 },
   center: { flex: 1, alignItems: "center" },
-  range: { fontSize: 16, fontWeight: "600", color: "#333" },
+  rangeButton: { flexDirection: "row", alignItems: "center" },
+  range: { fontSize: 16, fontWeight: "600", color: "#333", flexShrink: 1 },
+  rangeChevron: { marginLeft: 4 },
   hint: { fontSize: 12, color: "#888", marginTop: 2 },
   today: { color: "#0055A5", fontWeight: "600" },
 });

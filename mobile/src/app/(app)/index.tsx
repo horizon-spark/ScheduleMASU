@@ -10,6 +10,7 @@ import {
 import PagerView from "react-native-pager-view";
 import { DayPage } from "../../components/schedule/DayPage";
 import { DayTabs } from "../../components/schedule/DayTabs";
+import { PeriodPickerModal } from "../../components/schedule/PeriodPickerModal";
 import { ScheduleHeader } from "../../components/schedule/ScheduleHeader";
 import { SubjectPickerModal } from "../../components/schedule/SubjectPickerModal";
 import { WeekSwitcher } from "../../components/schedule/WeekSwitcher";
@@ -19,6 +20,7 @@ import { useSchedule } from "../../hooks/useSchedule";
 export default function ScheduleScreen() {
   const pagerRef = useRef<PagerView>(null);
   const [isPickerVisible, setIsPickerVisible] = useState(false);
+  const [isPeriodPickerVisible, setIsPeriodPickerVisible] = useState(false);
 
   const {
     subject,
@@ -37,6 +39,7 @@ export default function ScheduleScreen() {
     goToPrevWeek,
     goToNextWeek,
     goToCurrentWeek,
+    goToWeekDate,
     selectSubject,
     refresh,
   } = useSchedule(pagerRef);
@@ -79,6 +82,7 @@ export default function ScheduleScreen() {
             onPrev={goToPrevWeek}
             onNext={goToNextWeek}
             onToday={goToCurrentWeek}
+            onPressRange={() => setIsPeriodPickerVisible(true)}
           />
 
           <DayTabs
@@ -160,6 +164,16 @@ export default function ScheduleScreen() {
         onSelect={(next) => {
           setIsPickerVisible(false);
           selectSubject(next);
+        }}
+      />
+
+      <PeriodPickerModal
+        visible={isPeriodPickerVisible}
+        selectedWeek={weekStart}
+        onClose={() => setIsPeriodPickerVisible(false)}
+        onSelect={(week) => {
+          setIsPeriodPickerVisible(false);
+          goToWeekDate(week);
         }}
       />
     </View>

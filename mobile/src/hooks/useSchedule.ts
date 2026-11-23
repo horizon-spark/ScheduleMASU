@@ -321,6 +321,15 @@ export function useSchedule(pagerRef: PagerRef) {
     goToWeek(monday);
   }, [goToWeek]);
 
+  const goToWeekDate = useCallback(
+    (date: Date) => {
+      const monday = getMondayOfWeek(date);
+      if (isSameDay(monday, weekStartRef.current)) return;
+      goToWeek(monday);
+    },
+    [goToWeek],
+  );
+
   const selectSubject = useCallback((next: ScheduleSubject) => {
     const prev = subjectRef.current;
 
@@ -382,6 +391,7 @@ export function useSchedule(pagerRef: PagerRef) {
     goToPrevWeek,
     goToNextWeek,
     goToCurrentWeek,
+    goToWeekDate,
     selectSubject,
     refresh,
   };

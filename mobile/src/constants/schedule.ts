@@ -104,6 +104,33 @@ export function getWeekParity(start: Date): "чётная" | "нечётная" 
   return weekIndex % 2 === 0 ? "чётная" : "нечётная";
 }
 
+/**
+ * Учебные недели семестра, к которому относится дата:
+ * осень — от недели 31 августа до недели 31 января,
+ * весна — от недели 1 февраля до недели 30 июня.
+ */
+export function getSemesterWeeks(date: Date): Date[] {
+  const monday = getMondayOfWeek(date);
+  const month = monday.getMonth();
+  const isSpring = month >= 1 && month <= 6; // февраль–июль
+  const academicStart = getAcademicYearStart(monday);
+  const academicYear = academicStart.getFullYear();
+
+  const start = isSpring
+    ? getMondayOfWeek(new Date(academicYear + 1, 1, 1))
+    : getMondayOfWeek(academicStart);
+
+  const end = isSpring
+    ? new Date(academicYear + 1, 5, 30)
+    : new Date(academicYear + 1, 0, 31);
+
+  const weeks: Date[] = [];
+  for (let week = start; week <= end; week = addDays(week, 7)) {
+    weeks.push(week);
+  }
+  return weeks;
+}
+
 /** «2026-11-20 16:43:22» → «20.11.2026 16:43». */
 export function formatUpdateTime(value: string): string {
   const match = /^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})/.exec(value);
