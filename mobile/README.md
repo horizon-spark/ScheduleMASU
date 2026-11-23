@@ -29,7 +29,12 @@ npm run android           # Android
 npm run ios               # iOS (в релизе пока не используется)
 npm run web               # web-сборка
 npx tsc --noEmit          # typecheck
-npx expo export --platform web   # проверка сборки
+
+# web-export — это production-бандл, поэтому нужен HTTPS-адрес API:
+EXPO_PUBLIC_API_BASE_URL=https://example.com/api npx expo export --platform web
+# Windows PowerShell:
+# $env:EXPO_PUBLIC_API_BASE_URL='https://example.com/api'; npx expo export --platform web
+
 npx expo-doctor           # диагностика зависимостей
 ```
 
