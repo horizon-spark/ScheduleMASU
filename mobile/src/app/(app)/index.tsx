@@ -83,6 +83,7 @@ export default function ScheduleScreen() {
           />
 
           <DayTabs
+            weekStart={weekStart}
             currentPage={currentPage}
             onSelect={(i) => pagerRef.current?.setPage(i)}
           />
