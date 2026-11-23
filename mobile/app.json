@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "ScheduleMASU",
-    "slug": "ScheduleMASU",
+    "name": "MAUverse",
+    "slug": "mauverse",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "schedulemasu",
+    "scheme": "mauverse",
     "userInterfaceStyle": "light",
     "ios": {
       "icon": "./assets/expo.icon"
