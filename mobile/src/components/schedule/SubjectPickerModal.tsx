@@ -17,6 +17,7 @@ import {
 import { getBuildings, getRooms, searchTeachers } from "../../api/schedule";
 import type { Building, Group, Room, Teacher } from "../../api/types";
 import type { ScheduleSubject } from "../../types/schedule";
+import { describeRequestError, getErrorSummary } from "../../utils/apiError";
 import {
   makeGroupSubject,
   makeRoomSubject,
@@ -226,10 +227,16 @@ function TeacherTab({ active, onSelect }: SubjectTabProps) {
           setResults(res.teachers);
           setError(null);
         })
-        .catch(() => {
+        .catch((err) => {
           if (!isActive) return;
+          console.warn(
+            "[subject-picker] teachers search failed",
+            getErrorSummary(err),
+          );
           setResults([]);
-          setError("Не удалось найти преподавателей");
+          setError(
+            describeRequestError(err, "Не удалось найти преподавателей"),
+          );
         })
         .finally(() => {
           if (isActive) setLoading(false);
@@ -321,9 +328,13 @@ function RoomTab({ active, onSelect }: SubjectTabProps) {
         setBuildings(res.buildings);
         setError(null);
       })
-      .catch(() => {
+      .catch((err) => {
         if (!isActive) return;
-        setError("Не удалось загрузить корпуса");
+        console.warn(
+          "[subject-picker] buildings load failed",
+          getErrorSummary(err),
+        );
+        setError(describeRequestError(err, "Не удалось загрузить корпуса"));
       })
       .finally(() => {
         if (isActive) setLoading(false);
@@ -346,9 +357,13 @@ function RoomTab({ active, onSelect }: SubjectTabProps) {
       const res = await getRooms(building.bui_id);
       if (seq !== requestSeq.current) return;
       setRooms(res.rooms.filter((room) => room.room && room.room !== "-"));
-    } catch {
+    } catch (err) {
       if (seq !== requestSeq.current) return;
-      setError("Не удалось загрузить аудитории");
+      console.warn(
+        "[subject-picker] rooms load failed",
+        getErrorSummary(err),
+      );
+      setError(describeRequestError(err, "Не удалось загрузить аудитории"));
     } finally {
       if (seq === requestSeq.current) setLoading(false);
     }

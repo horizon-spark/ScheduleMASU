@@ -18,6 +18,7 @@ import {
 } from "../constants/schedule";
 import { getSubjectKey } from "../types/schedule";
 import type { ScheduleSubject } from "../types/schedule";
+import { describeRequestError, getErrorSummary } from "../utils/apiError";
 import {
   isScheduleCacheFresh,
   makeScheduleCacheKey,
@@ -151,9 +152,12 @@ export function useSchedule(pagerRef: PagerRef) {
           update: nextUpdate,
           fetchedAt: Date.now(),
         });
-      } catch {
+      } catch (err) {
         if (seq !== requestSeq.current) return;
-        setError("Не удалось загрузить расписание");
+        console.warn("[schedule] load failed", getErrorSummary(err));
+        setError(
+          describeRequestError(err, "Не удалось загрузить расписание"),
+        );
       } finally {
         inFlightCountRef.current = Math.max(0, inFlightCountRef.current - 1);
         if (seq === requestSeq.current) {
