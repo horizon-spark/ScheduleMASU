@@ -65,4 +65,30 @@ const config = {
   },
 };
 
+// Production-проверки: слабый секрет и отсутствие Redis несовместимы с релизом.
+if (config.env === "production") {
+  if (!config.redis.url) {
+    logger.fatal(
+      { variable: "REDIS_URL" },
+      "[ENV] REDIS_URL is required in production"
+    );
+    process.exit(1);
+  }
+
+  if (config.jwt.secret.length < 32) {
+    logger.fatal(
+      { variable: "JWT_SECRET" },
+      "[ENV] JWT_SECRET must be at least 32 characters in production"
+    );
+    process.exit(1);
+  }
+
+  if (!config.scheduleApi.url.startsWith("https://")) {
+    logger.warn(
+      { variable: "SCHEDULE_API_URL" },
+      "[ENV] SCHEDULE_API_URL should use https://"
+    );
+  }
+}
+
 module.exports = config;
