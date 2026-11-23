@@ -24,6 +24,24 @@ export interface Group {
   UID_mg: string;
 }
 
+export interface Building {
+  bui_id: number;
+  building: string;
+}
+
+export interface Room {
+  room_id: number;
+  room: string;
+  room_type: string;
+  bui_id: number;
+}
+
+export interface Teacher {
+  teacher_id: number;
+  teacher: string;
+  UID: string;
+}
+
 export interface Lesson {
   date: string;
   slot: string;
@@ -32,8 +50,15 @@ export interface Lesson {
   disciplines: string;
   room: string;
   teacher: string;
+  /**
+   * Для расписания группы — подгруппы занятия.
+   * Для расписания преподавателя/аудитории — названия групп.
+   */
   subGroups: string[];
-  id: number;
+  /** Есть только в расписании группы. */
+  id?: number;
+  /** Есть только в расписании преподавателя/аудитории. */
+  index?: number;
 }
 
 // Ответы API
@@ -52,3 +77,22 @@ export interface GroupsResponse extends ApiResponse<Group> {
 export interface ScheduleResponse extends ApiResponse<Lesson> {
   timetable: Lesson[];
 }
+
+export interface BuildingsResponse extends ApiResponse<Building> {
+  buildings: Building[];
+}
+
+export interface RoomsResponse extends ApiResponse<Room> {
+  rooms: Room[];
+}
+
+export interface TeachersResponse extends ApiResponse<Teacher> {
+  teachers: Teacher[];
+}
+
+export interface DatesResponse extends ApiResponse<string> {
+  dates: string[];
+}
+
+/** Ответ GET /update — время последнего обновления расписания на сервере. */
+export type UpdateResponse = ApiResponse<unknown>;
