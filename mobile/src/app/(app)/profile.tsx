@@ -14,6 +14,7 @@ import { SelectionModal } from "../../components/profile/SelectionModal";
 import { SettingRow } from "../../components/profile/SettingRow";
 import { useAuth } from "../../context/AuthContext";
 import { useProfileSelection } from "../../hooks/useProfileSelection";
+import { clearScheduleCache } from "../../utils/scheduleCache";
 import { clearProfileSelection } from "../../utils/storage";
 
 type ModalType = "faculty" | "course" | "group" | null;
@@ -47,7 +48,7 @@ export default function ProfileScreen() {
         onPress: async () => {
           try {
             setIsSigningOut(true);
-            await clearProfileSelection();
+            await Promise.all([clearProfileSelection(), clearScheduleCache()]);
             await signOut();
             // router.replace не нужен — RootNavigator сделает редирект
             // при смене userToken на null
