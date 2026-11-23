@@ -324,12 +324,6 @@ export function useSchedule(pagerRef: PagerRef) {
     goToWeek(addDays(weekStartRef.current, 7));
   }, [goToWeek]);
 
-  const goToCurrentWeek = useCallback(() => {
-    const monday = getMondayOfWeek(new Date());
-    if (isSameDay(monday, weekStartRef.current)) return;
-    goToWeek(monday);
-  }, [goToWeek]);
-
   const goToWeekDate = useCallback(
     (date: Date) => {
       const monday = getMondayOfWeek(date);
@@ -381,8 +375,6 @@ export function useSchedule(pagerRef: PagerRef) {
     loadWeek(current, weekStartRef.current, { force: true });
   }, [loadWeek]);
 
-  const isCurrentWeek = isSameDay(weekStart, getMondayOfWeek(new Date()));
-
   return {
     subject,
     group,
@@ -396,10 +388,8 @@ export function useSchedule(pagerRef: PagerRef) {
     setCurrentPage,
     initialPage: initialPageRef.current,
     weekStart,
-    isCurrentWeek,
     goToPrevWeek,
     goToNextWeek,
-    goToCurrentWeek,
     goToWeekDate,
     selectSubject,
     refresh,

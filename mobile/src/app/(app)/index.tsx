@@ -36,10 +36,8 @@ export default function ScheduleScreen() {
     setCurrentPage,
     initialPage,
     weekStart,
-    isCurrentWeek,
     goToPrevWeek,
     goToNextWeek,
-    goToCurrentWeek,
     goToWeekDate,
     selectSubject,
     refresh,
@@ -75,10 +73,8 @@ export default function ScheduleScreen() {
         <>
           <WeekSwitcher
             start={weekStart}
-            isCurrentWeek={isCurrentWeek}
             onPrev={goToPrevWeek}
             onNext={goToNextWeek}
-            onToday={goToCurrentWeek}
             onPressRange={() => setIsPeriodPickerVisible(true)}
           />
 

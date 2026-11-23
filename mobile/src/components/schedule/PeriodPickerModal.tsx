@@ -12,11 +12,12 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   formatWeekRange,
+  getMondayOfWeek,
   getSemesterWeeks,
   getWeekParity,
   isSameDay,
 } from "../../constants/schedule";
-import { spacing } from "../../constants/theme";
+import { colors, spacing } from "../../constants/theme";
 
 type Props = {
   visible: boolean;
@@ -34,6 +35,7 @@ export function PeriodPickerModal({
   onSelect,
 }: Props) {
   const weeks = useMemo(() => getSemesterWeeks(selectedWeek), [selectedWeek]);
+  const currentWeek = getMondayOfWeek(new Date());
   const insets = useSafeAreaInsets();
 
   const selectedIndex = useMemo(() => {
@@ -68,6 +70,20 @@ export function PeriodPickerModal({
                       )}`
                     : ""}
                 </Text>
+                <Pressable
+                  onPress={() => onSelect(currentWeek)}
+                  hitSlop={6}
+                  accessibilityRole="button"
+                  accessibilityLabel="Перейти к текущей неделе"
+                  style={styles.todayButton}
+                >
+                  <Ionicons
+                    name="locate-outline"
+                    size={14}
+                    color={colors.primary}
+                  />
+                  <Text style={styles.todayText}>Текущая неделя</Text>
+                </Pressable>
               </View>
               <Pressable
                 onPress={onClose}
@@ -158,6 +174,18 @@ const styles = StyleSheet.create({
   headerText: { flex: 1, paddingRight: 12 },
   title: { fontSize: 18, fontWeight: "700", color: "#333" },
   subtitle: { fontSize: 12, color: "#888", marginTop: 2 },
+  todayButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    alignSelf: "flex-start",
+    marginTop: spacing.xs,
+  },
+  todayText: {
+    color: colors.primary,
+    fontSize: 12,
+    fontWeight: "600",
+    marginLeft: spacing.xs,
+  },
   close: {
     width: 32,
     height: 32,

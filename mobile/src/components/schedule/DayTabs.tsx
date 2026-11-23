@@ -7,7 +7,7 @@ import {
   isSameDay,
   WEEKDAYS_COUNT,
 } from "../../constants/schedule";
-import { colors, spacing } from "../../constants/theme";
+import { colors, radii, spacing } from "../../constants/theme";
 
 type Props = {
   weekStart: Date;
@@ -80,6 +80,8 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     paddingVertical: 2,
+    borderRadius: radii.md,
+    overflow: "hidden",
   },
   pressed: { opacity: 0.7 },
   weekday: { fontSize: 11, fontWeight: "600", color: colors.textMuted },
@@ -87,7 +89,8 @@ const styles = StyleSheet.create({
   dayCircle: {
     width: 30,
     height: 30,
-    borderRadius: 15,
+    borderRadius: radii.pill,
+    overflow: "hidden",
     marginTop: 3,
     alignItems: "center",
     justifyContent: "center",

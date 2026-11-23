@@ -6,19 +6,15 @@ import { colors, spacing } from "../../constants/theme";
 
 type Props = {
   start: Date;
-  isCurrentWeek: boolean;
   onPrev: () => void;
   onNext: () => void;
-  onToday: () => void;
   onPressRange: () => void;
 };
 
 export function WeekSwitcher({
   start,
-  isCurrentWeek,
   onPrev,
   onNext,
-  onToday,
   onPressRange,
 }: Props) {
   return (
@@ -54,18 +50,6 @@ export function WeekSwitcher({
             style={styles.rangeChevron}
           />
         </Pressable>
-        {isCurrentWeek ? (
-          <Text style={styles.hint}>Текущая неделя</Text>
-        ) : (
-          <Pressable
-            onPress={onToday}
-            hitSlop={6}
-            accessibilityRole="button"
-            accessibilityLabel="Перейти к текущей неделе"
-          >
-            <Text style={[styles.hint, styles.today]}>К текущей неделе</Text>
-          </Pressable>
-        )}
       </View>
 
       <Pressable
@@ -108,6 +92,4 @@ const styles = StyleSheet.create({
     flexShrink: 1,
   },
   rangeChevron: { marginLeft: spacing.xs },
-  hint: { fontSize: 11, color: colors.textMuted, marginTop: 1 },
-  today: { color: colors.primary, fontWeight: "600" },
 });
