@@ -31,6 +31,8 @@
 
 ```bash
 openssl rand -base64 48
+# или, если openssl нет:
+node -e "console.log(require('crypto').randomBytes(48).toString('base64'))"
 ```
 
 Ротация `JWT_SECRET` инвалидирует все текущие сессии — пользователям нужно войти заново.
