@@ -47,9 +47,21 @@ npm run dev
 
 ## Docker (HTTP, dev)
 
+Базовый compose использует `.env`, где `NODE_ENV=production`. С коротким `JWT_SECRET`
+API намеренно не стартует. Для локальной разработки используйте dev-оверлей:
+
 ```bash
-docker compose up -d --build
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --build
 curl http://127.0.0.1/health
+```
+
+Он выставляет `NODE_ENV=development` только контейнеру API: production-проверки
+секрета и Redis отключаются, TLS не требуется.
+
+Если нужен HTTPS локально:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.tls.yml up -d --build
 ```
 
 ## TLS (production)
