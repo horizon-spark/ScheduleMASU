@@ -2,6 +2,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { formatWeekRange, getWeekParity } from "../../constants/schedule";
+import { colors, spacing } from "../../constants/theme";
 
 type Props = {
   start: Date;
@@ -29,7 +30,7 @@ export function WeekSwitcher({
         accessibilityLabel="Предыдущая неделя"
         style={({ pressed }) => [styles.arrow, pressed && styles.pressed]}
       >
-        <Ionicons name="chevron-back" size={22} color="#0055A5" />
+        <Ionicons name="chevron-back" size={20} color={colors.primary} />
       </Pressable>
 
       <View style={styles.center}>
@@ -49,7 +50,7 @@ export function WeekSwitcher({
           <Ionicons
             name="chevron-down"
             size={14}
-            color="#666"
+            color={colors.textMuted}
             style={styles.rangeChevron}
           />
         </Pressable>
@@ -74,7 +75,7 @@ export function WeekSwitcher({
         accessibilityLabel="Следующая неделя"
         style={({ pressed }) => [styles.arrow, pressed && styles.pressed]}
       >
-        <Ionicons name="chevron-forward" size={22} color="#0055A5" />
+        <Ionicons name="chevron-forward" size={20} color={colors.primary} />
       </Pressable>
     </View>
   );
@@ -84,24 +85,29 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 8,
-    paddingVertical: 6,
-    backgroundColor: "white",
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    backgroundColor: colors.surface,
     borderBottomWidth: 1,
-    borderBottomColor: "#E0E0E0",
+    borderBottomColor: colors.border,
   },
   arrow: {
-    width: 40,
-    height: 40,
+    width: 36,
+    height: 36,
     alignItems: "center",
     justifyContent: "center",
-    borderRadius: 20,
+    borderRadius: 18,
   },
   pressed: { opacity: 0.6 },
   center: { flex: 1, alignItems: "center" },
   rangeButton: { flexDirection: "row", alignItems: "center" },
-  range: { fontSize: 16, fontWeight: "600", color: "#333", flexShrink: 1 },
-  rangeChevron: { marginLeft: 4 },
-  hint: { fontSize: 12, color: "#888", marginTop: 2 },
-  today: { color: "#0055A5", fontWeight: "600" },
+  range: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: colors.text,
+    flexShrink: 1,
+  },
+  rangeChevron: { marginLeft: spacing.xs },
+  hint: { fontSize: 11, color: colors.textMuted, marginTop: 1 },
+  today: { color: colors.primary, fontWeight: "600" },
 });

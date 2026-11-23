@@ -7,27 +7,28 @@ import {
   View,
 } from "react-native";
 import { Lesson } from "../../api/types";
+import { formatUpdateTime } from "../../constants/schedule";
+import { colors, spacing } from "../../constants/theme";
 import type { ScheduleSubjectKind } from "../../types/schedule";
 import { LessonCard } from "./LessonCard";
 
 type Props = {
-  dayTitle: string;
   lessons: Lesson[];
   subjectKind: ScheduleSubjectKind;
   refreshing: boolean;
   onRefresh: () => void;
+  update?: string | null;
 };
 
 export function DayPage({
-  dayTitle,
   lessons,
   subjectKind,
   refreshing,
   onRefresh,
+  update,
 }: Props) {
   return (
     <View style={styles.page}>
-      <Text style={styles.dayTitle}>{dayTitle}</Text>
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={[
@@ -40,8 +41,8 @@ export function DayPage({
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            tintColor="#0055A5"
-            colors={["#0055A5"]}
+            tintColor={colors.primary}
+            colors={[colors.primary]}
           />
         }
       >
@@ -58,26 +59,36 @@ export function DayPage({
             />
           ))
         )}
+
+        {update ? (
+          <Text style={styles.updated}>
+            Данные на {formatUpdateTime(update)}
+          </Text>
+        ) : null}
       </ScrollView>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  page: { flex: 1, padding: 15 },
-  dayTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#333",
-    marginBottom: 15,
-    textAlign: "center",
+  page: {
+    flex: 1,
+    paddingHorizontal: spacing.md,
+    paddingTop: spacing.sm,
   },
   scroll: { flex: 1 },
-  scrollContent: { paddingBottom: 20 },
+  scrollContent: { paddingBottom: spacing.lg },
   emptyContent: { flexGrow: 1, justifyContent: "center" },
   emptyText: {
     textAlign: "center",
-    color: "#888",
+    color: colors.textMuted,
     fontSize: 14,
+  },
+  updated: {
+    textAlign: "center",
+    color: "#AAAAAA",
+    fontSize: 11,
+    marginTop: spacing.sm,
+    marginBottom: spacing.sm,
   },
 });

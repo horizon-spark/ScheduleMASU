@@ -15,6 +15,7 @@ import { ScheduleHeader } from "../../components/schedule/ScheduleHeader";
 import { SubjectPickerModal } from "../../components/schedule/SubjectPickerModal";
 import { WeekSwitcher } from "../../components/schedule/WeekSwitcher";
 import { DAYS_RU, WEEKDAYS_COUNT } from "../../constants/schedule";
+import { colors, radii, spacing } from "../../constants/theme";
 import { useSchedule } from "../../hooks/useSchedule";
 
 export default function ScheduleScreen() {
@@ -61,18 +62,14 @@ export default function ScheduleScreen() {
     return (
       <View style={styles.container}>
         <ScheduleHeader />
-        <ActivityIndicator size="large" color="#0055A5" style={{ flex: 1 }} />
+        <ActivityIndicator size="large" color={colors.primary} style={{ flex: 1 }} />
       </View>
     );
   }
 
   return (
     <View style={styles.container}>
-      <ScheduleHeader
-        subject={subject}
-        onPressSubject={openPicker}
-        update={subject ? update : null}
-      />
+      <ScheduleHeader subject={subject} onPressSubject={openPicker} />
 
       {subject ? (
         <>
@@ -108,18 +105,18 @@ export default function ScheduleScreen() {
               {DAYS_RU.slice(0, WEEKDAYS_COUNT).map((day) => (
                 <DayPage
                   key={day}
-                  dayTitle={day}
                   lessons={lessonsByDay.get(day) ?? []}
                   subjectKind={subject.kind}
                   refreshing={isRefreshing}
                   onRefresh={refresh}
+                  update={update}
                 />
               ))}
             </PagerView>
 
             {isWeekLoading || (isRefreshing && schedule.length === 0) ? (
               <View style={styles.overlay}>
-                <ActivityIndicator size="large" color="#0055A5" />
+                <ActivityIndicator size="large" color={colors.primary} />
               </View>
             ) : null}
 
@@ -181,57 +178,57 @@ export default function ScheduleScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#F5F5F5" },
+  container: { flex: 1, backgroundColor: colors.background },
   pagerContainer: { flex: 1 },
   pager: { flex: 1 },
   emptyContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    paddingHorizontal: 24,
+    paddingHorizontal: spacing.xl,
   },
   emptyText: {
     textAlign: "center",
-    color: "#888",
+    color: colors.textMuted,
     fontSize: 14,
   },
   chooseButton: {
-    marginTop: 16,
-    backgroundColor: "#0055A5",
-    borderRadius: 22,
-    paddingVertical: 12,
-    paddingHorizontal: 24,
+    marginTop: spacing.lg,
+    backgroundColor: colors.primary,
+    borderRadius: radii.pill,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.xl,
   },
-  chooseText: { color: "white", fontWeight: "600", fontSize: 15 },
+  chooseText: { color: colors.onPrimary, fontWeight: "600", fontSize: 15 },
   banner: {
-    backgroundColor: "#FFF3CD",
+    backgroundColor: colors.warningBackground,
     paddingVertical: 6,
-    paddingHorizontal: 12,
+    paddingHorizontal: spacing.md,
   },
-  bannerText: { color: "#8A6D3B", fontSize: 12, textAlign: "center" },
+  bannerText: { color: colors.warningText, fontSize: 12, textAlign: "center" },
   overlay: {
     position: "absolute",
     top: 0,
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: "#F5F5F5",
+    backgroundColor: colors.background,
     alignItems: "center",
     justifyContent: "center",
-    padding: 24,
+    padding: spacing.xl,
   },
   errorText: {
-    color: "#666",
+    color: colors.textSecondary,
     fontSize: 14,
     textAlign: "center",
-    marginBottom: 12,
+    marginBottom: spacing.md,
   },
   retryButton: {
-    backgroundColor: "#0055A5",
-    borderRadius: 20,
+    backgroundColor: colors.primary,
+    borderRadius: radii.pill,
     paddingVertical: 10,
-    paddingHorizontal: 20,
+    paddingHorizontal: spacing.xl,
   },
   pressed: { opacity: 0.7 },
-  retryText: { color: "white", fontWeight: "600", fontSize: 14 },
+  retryText: { color: colors.onPrimary, fontWeight: "600", fontSize: 14 },
 });

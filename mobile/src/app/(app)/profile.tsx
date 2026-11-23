@@ -8,10 +8,12 @@ import {
   Text,
   View,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Divider, InfoCard, InfoRow } from "../../components/profile/InfoCard";
 import { LogoutButton } from "../../components/profile/LogoutButton";
 import { SelectionModal } from "../../components/profile/SelectionModal";
 import { SettingRow } from "../../components/profile/SettingRow";
+import { colors, spacing } from "../../constants/theme";
 import { useAuth } from "../../context/AuthContext";
 import { useProfileSelection } from "../../hooks/useProfileSelection";
 import { clearScheduleCache } from "../../utils/scheduleCache";
@@ -21,6 +23,7 @@ type ModalType = "faculty" | "course" | "group" | null;
 
 export default function ProfileScreen() {
   const { user, signOut } = useAuth();
+  const insets = useSafeAreaInsets();
 
   const [modalType, setModalType] = useState<ModalType>(null);
   const [isSigningOut, setIsSigningOut] = useState(false);
@@ -64,13 +67,17 @@ export default function ProfileScreen() {
 
   if (isInitialLoading) {
     return (
-      <ActivityIndicator size="large" color="#0055A5" style={{ flex: 1 }} />
+      <ActivityIndicator
+        size="large"
+        color={colors.primary}
+        style={{ flex: 1 }}
+      />
     );
   }
 
   return (
     <ScrollView style={styles.container}>
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: insets.top + spacing.md }]}>
         <Text style={styles.headerTitle}>Ваш профиль</Text>
       </View>
 
@@ -151,13 +158,12 @@ export default function ProfileScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#F5F5F5" },
+  container: { flex: 1, backgroundColor: colors.background },
   header: {
-    backgroundColor: "#0055A5",
-    padding: 20,
-    paddingTop: 50,
-    paddingBottom: 20,
+    backgroundColor: colors.primary,
+    paddingHorizontal: spacing.xl,
+    paddingBottom: spacing.lg,
   },
-  headerTitle: { color: "white", fontSize: 20, fontWeight: "bold" },
-  content: { padding: 15 },
+  headerTitle: { color: colors.onPrimary, fontSize: 20, fontWeight: "bold" },
+  content: { padding: spacing.lg },
 });

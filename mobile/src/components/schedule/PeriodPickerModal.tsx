@@ -9,12 +9,14 @@ import {
   Text,
   View,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   formatWeekRange,
   getSemesterWeeks,
   getWeekParity,
   isSameDay,
 } from "../../constants/schedule";
+import { spacing } from "../../constants/theme";
 
 type Props = {
   visible: boolean;
@@ -32,6 +34,7 @@ export function PeriodPickerModal({
   onSelect,
 }: Props) {
   const weeks = useMemo(() => getSemesterWeeks(selectedWeek), [selectedWeek]);
+  const insets = useSafeAreaInsets();
 
   const selectedIndex = useMemo(() => {
     const index = weeks.findIndex((week) => isSameDay(week, selectedWeek));
@@ -49,7 +52,12 @@ export function PeriodPickerModal({
         <Pressable style={styles.backdrop} onPress={onClose} />
 
         {visible ? (
-          <View style={styles.sheet}>
+          <View
+            style={[
+              styles.sheet,
+              { paddingBottom: insets.bottom + spacing.md },
+            ]}
+          >
             <View style={styles.header}>
               <View style={styles.headerText}>
                 <Text style={styles.title}>Выберите период</Text>
@@ -141,7 +149,6 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 20,
     paddingHorizontal: 16,
     paddingTop: 16,
-    paddingBottom: 16,
   },
   header: {
     flexDirection: "row",

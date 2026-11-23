@@ -14,8 +14,10 @@ import {
   TextInput,
   View,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { getBuildings, getRooms, searchTeachers } from "../../api/schedule";
 import type { Building, Group, Room, Teacher } from "../../api/types";
+import { spacing } from "../../constants/theme";
 import type { ScheduleSubject } from "../../types/schedule";
 import { describeRequestError, getErrorSummary } from "../../utils/apiError";
 import {
@@ -54,6 +56,7 @@ export function SubjectPickerModal({
   onSelect,
 }: Props) {
   const [tab, setTab] = useState<TabKey>(active?.kind ?? "group");
+  const insets = useSafeAreaInsets();
 
   useEffect(() => {
     if (visible) {
@@ -74,7 +77,7 @@ export function SubjectPickerModal({
       >
         <Pressable style={styles.backdrop} onPress={onClose} />
 
-        <View style={styles.sheet}>
+        <View style={[styles.sheet, { paddingBottom: insets.bottom + spacing.md }]}>
           <View style={styles.sheetHeader}>
             <View style={styles.sheetTitleWrap}>
               <Text style={styles.sheetTitle}>Расписание для</Text>
@@ -513,7 +516,6 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 20,
     paddingHorizontal: 16,
     paddingTop: 16,
-    paddingBottom: 24,
   },
   sheetHeader: {
     flexDirection: "row",
