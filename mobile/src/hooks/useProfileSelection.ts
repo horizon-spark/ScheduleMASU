@@ -1,7 +1,7 @@
 // src/hooks/useProfileSelection.ts
 import { useEffect, useState } from "react";
 import { Alert } from "react-native";
-import { getCourses, getFaculties, getGroups } from "../api/schedule";
+import { getCourses, getFaculties, getMainGroups } from "../api/schedule";
 import { Course, Faculty, Group } from "../api/types";
 import { makeGroupSubject } from "../utils/subjects";
 import {
@@ -46,19 +46,39 @@ export function useProfileSelection(onAfterSelect?: () => void) {
         ]);
         if (savedFaculty) setSelectedFaculty(savedFaculty);
         if (savedCourse) setSelectedCourse(savedCourse);
-        if (savedGroup) setSelectedGroup(savedGroup);
+
+        let effectiveGroup = savedGroup as Group | null;
 
         if (savedFaculty && savedCourse) {
           try {
-            const groupsRes = await getGroups(
+            const groupsRes = await getMainGroups(
               savedFaculty.fac_id,
               savedCourse.course_id,
             );
             setGroups(groupsRes.groups);
+
+            // Миграция со старого выбора подгруппы на основную группу
+            const selected = effectiveGroup;
+            if (selected?.UID_mg) {
+              const mainGroup = groupsRes.groups.find(
+                (group) =>
+                  group.UID === selected.UID_mg ||
+                  group.group_id === selected.maingroup_id,
+              );
+              if (mainGroup) {
+                effectiveGroup = mainGroup;
+                await Promise.all([
+                  saveSelectedGroup(mainGroup),
+                  saveSelectedSubject(makeGroupSubject(mainGroup)),
+                ]);
+              }
+            }
           } catch (e) {
             console.warn("[profile] groups preload failed", e);
           }
         }
+
+        if (effectiveGroup) setSelectedGroup(effectiveGroup);
       } catch (e: any) {
         console.warn("[profile] init failed", e);
         Alert.alert(
@@ -75,7 +95,7 @@ export function useProfileSelection(onAfterSelect?: () => void) {
   const loadGroups = async (facId: number, courseId: number) => {
     try {
       setIsLoading(true);
-      const res = await getGroups(facId, courseId);
+      const res = await getMainGroups(facId, courseId);
       setGroups(res.groups);
     } catch {
       Alert.alert("Ошибка", "Не удалось загрузить группы");

@@ -19,6 +19,7 @@ import {
 import { getSubjectKey } from "../types/schedule";
 import type { ScheduleSubject } from "../types/schedule";
 import { describeRequestError, getErrorSummary } from "../utils/apiError";
+import { resolveMainGroup } from "../utils/groups";
 import {
   isScheduleCacheFresh,
   makeScheduleCacheKey,
@@ -29,6 +30,7 @@ import type { CachedSchedule } from "../utils/scheduleCache";
 import {
   getSelectedGroup,
   getSelectedSubject,
+  saveSelectedGroup,
   saveSelectedSubject,
 } from "../utils/storage";
 import { makeGroupSubject, sameSubject } from "../utils/subjects";
@@ -177,16 +179,23 @@ export function useSchedule(pagerRef: PagerRef) {
       isFocusedRef.current = true;
 
       (async () => {
-        let nextGroup: Group | null = null;
+        let storedGroup: Group | null = null;
         let stored: ScheduleSubject | null = null;
 
         try {
-          nextGroup = (await getSelectedGroup()) as Group | null;
+          storedGroup = (await getSelectedGroup()) as Group | null;
         } catch {
-          nextGroup = null;
+          storedGroup = null;
         }
+
+        // Старый выбор подгруппы поднимаем до основной группы
+        const nextGroup = await resolveMainGroup(storedGroup);
         stored = await getSelectedSubject();
         if (!isActive) return;
+
+        if (nextGroup && storedGroup && nextGroup.UID !== storedGroup.UID) {
+          void saveSelectedGroup(nextGroup);
+        }
 
         // Преподаватель/аудитория имеют приоритет: это осознанный выбор.
         // Группа берётся из профиля и обновляется, если её изменили.
