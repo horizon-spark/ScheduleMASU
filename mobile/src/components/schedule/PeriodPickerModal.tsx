@@ -17,7 +17,7 @@ import {
   getWeekParity,
   isSameDay,
 } from "../../constants/schedule";
-import { colors, spacing } from "../../constants/theme";
+import { colors, radii, spacing } from "../../constants/theme";
 
 type Props = {
   visible: boolean;
@@ -63,23 +63,19 @@ export function PeriodPickerModal({
             <View style={styles.header}>
               <View style={styles.headerText}>
                 <Text style={styles.title}>Выберите период</Text>
-                <Text style={styles.subtitle}>
-                  {weeks.length > 0
-                    ? `${formatWeekRange(weeks[0])} … ${formatWeekRange(
-                        weeks[weeks.length - 1],
-                      )}`
-                    : ""}
-                </Text>
                 <Pressable
                   onPress={() => onSelect(currentWeek)}
                   hitSlop={6}
                   accessibilityRole="button"
                   accessibilityLabel="Перейти к текущей неделе"
-                  style={styles.todayButton}
+                  style={({ pressed }) => [
+                    styles.todayButton,
+                    pressed && styles.pressed,
+                  ]}
                 >
                   <Ionicons
                     name="locate-outline"
-                    size={14}
+                    size={16}
                     color={colors.primary}
                   />
                   <Text style={styles.todayText}>Текущая неделя</Text>
@@ -173,16 +169,20 @@ const styles = StyleSheet.create({
   },
   headerText: { flex: 1, paddingRight: 12 },
   title: { fontSize: 18, fontWeight: "700", color: "#333" },
-  subtitle: { fontSize: 12, color: "#888", marginTop: 2 },
   todayButton: {
     flexDirection: "row",
     alignItems: "center",
     alignSelf: "flex-start",
-    marginTop: spacing.xs,
+    marginTop: spacing.sm,
+    paddingVertical: spacing.sm + 2,
+    paddingHorizontal: spacing.md + 2,
+    borderRadius: radii.pill,
+    backgroundColor: colors.primarySoft,
+    minHeight: 40,
   },
   todayText: {
     color: colors.primary,
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: "600",
     marginLeft: spacing.xs,
   },

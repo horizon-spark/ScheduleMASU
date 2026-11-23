@@ -14,6 +14,9 @@ type Props = {
 export function ScheduleHeader({ subject, onPressSubject }: Props) {
   const insets = useSafeAreaInsets();
   const title = subject?.title ?? "Выбрать расписание";
+  // Направление/роль не дублируем в шапке: у группы остаётся только код.
+  // Подпись показываем лишь для аудитории — там это корпус.
+  const subtitle = subject?.kind === "room" ? subject.subtitle : undefined;
 
   return (
     <View style={[styles.header, { paddingTop: insets.top + spacing.sm }]}>
@@ -29,9 +32,9 @@ export function ScheduleHeader({ subject, onPressSubject }: Props) {
             <Text style={styles.title} numberOfLines={1}>
               {title}
             </Text>
-            {subject?.subtitle ? (
+            {subtitle ? (
               <Text style={styles.subtitle} numberOfLines={1}>
-                {subject.subtitle}
+                {subtitle}
               </Text>
             ) : null}
           </View>
