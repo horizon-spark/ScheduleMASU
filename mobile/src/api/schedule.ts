@@ -112,9 +112,11 @@ export const getSchedule = async (
   uid: string,
   start: string,
   end: string,
+  options: { fresh?: boolean } = {},
 ): Promise<ScheduleResponse> => {
   const { data } = await api.get(
     `/groups/${seg(uid)}/schedule/${seg(start)}/${seg(end)}`,
+    options.fresh ? { params: { fresh: 1 } } : undefined,
   );
   return data;
 };

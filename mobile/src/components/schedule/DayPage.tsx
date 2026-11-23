@@ -1,35 +1,55 @@
 // src/components/schedule/DayPage.tsx
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import {
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 import { Lesson } from "../../api/types";
 import { LessonCard } from "./LessonCard";
 
 type Props = {
   dayTitle: string;
   lessons: Lesson[];
+  refreshing: boolean;
+  onRefresh: () => void;
 };
 
-export function DayPage({ dayTitle, lessons }: Props) {
+export function DayPage({ dayTitle, lessons, refreshing, onRefresh }: Props) {
   return (
     <View style={styles.page}>
       <Text style={styles.dayTitle}>{dayTitle}</Text>
-      {lessons.length === 0 ? (
-        <Text style={styles.emptyText}>Занятий нет</Text>
-      ) : (
-        <ScrollView
-          style={styles.scroll}
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator
-        >
-          {lessons.map((item, index) => (
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={[
+          styles.scrollContent,
+          lessons.length === 0 && styles.emptyContent,
+        ]}
+        showsVerticalScrollIndicator
+        alwaysBounceVertical
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor="#0055A5"
+            colors={["#0055A5"]}
+          />
+        }
+      >
+        {lessons.length === 0 ? (
+          <Text style={styles.emptyText}>Занятий нет</Text>
+        ) : (
+          lessons.map((item, index) => (
             // index в ключе — fallback: в Lesson нет гарантированного id,
             // а пары в один день могут совпадать по date/slot/disciplines
             <LessonCard
               key={`${item.date}-${item.slot}-${item.disciplines}-${index}`}
               item={item}
             />
-          ))}
-        </ScrollView>
-      )}
+          ))
+        )}
+      </ScrollView>
     </View>
   );
 }
@@ -45,10 +65,10 @@ const styles = StyleSheet.create({
   },
   scroll: { flex: 1 },
   scrollContent: { paddingBottom: 20 },
+  emptyContent: { flexGrow: 1, justifyContent: "center" },
   emptyText: {
     textAlign: "center",
     color: "#888",
     fontSize: 14,
-    marginTop: 20,
   },
 });
