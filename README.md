@@ -106,7 +106,9 @@ npx expo start
 
 - `GET http://127.0.0.1/health` — процесс API жив; `GET /ready` — доступны Redis и LDAP.
 - В приложении выполните вход с доменной учётной записью и откройте расписание группы.
-- `cd mobile && npx tsc --noEmit` — проверка типов; `npx expo lint` — линтер.
+- `cd api && npm run lint && npm test` — линтер и API-тесты.
+- `cd mobile && npx tsc --noEmit && npm run lint && npm test` — типы, линтер и тесты.
+- CI (`.github/workflows/ci.yml`) прогоняет эти проверки на каждый push и pull request.
 
 ## Production
 
