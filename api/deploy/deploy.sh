@@ -26,6 +26,11 @@ LOCK_FILE="${LOCK_FILE:-/var/lock/schedulemasu-deploy.lock}"
 API_REF="${API_IMAGE}:${IMAGE_TAG}"
 NGINX_REF="${NGINX_IMAGE}:${IMAGE_TAG}"
 
+# Compose читает API_IMAGE/NGINX_IMAGE напрямую. Передаём полные имена
+# с тегом, иначе compose скачает :latest, а проверка ниже ищет :staging.
+export API_IMAGE="$API_REF"
+export NGINX_IMAGE="$NGINX_REF"
+
 log() {
   printf '[deploy] %s %s\n' "$(date -Is)" "$*"
 }
@@ -47,6 +52,15 @@ fi
 log "pulling ${API_REF} and ${NGINX_REF}"
 # shellcheck disable=SC2086
 docker compose $COMPOSE_FILES pull api nginx
+
+if ! docker image inspect "$API_REF" >/dev/null 2>&1; then
+  log "image ${API_REF} not found after pull; check IMAGE_TAG and API_IMAGE"
+  exit 1
+fi
+if ! docker image inspect "$NGINX_REF" >/dev/null 2>&1; then
+  log "image ${NGINX_REF} not found after pull; check IMAGE_TAG and NGINX_IMAGE"
+  exit 1
+fi
 
 NEW_API_ID="$(docker image inspect -f '{{.Id}}' "$API_REF")"
 NEW_NGINX_ID="$(docker image inspect -f '{{.Id}}' "$NGINX_REF")"
