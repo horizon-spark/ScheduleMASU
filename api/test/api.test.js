@@ -83,6 +83,16 @@ it("serves liveness without dependencies", async () => {
   assert.equal(res.body.ok, true);
 });
 
+it("adds security headers and dev CORS", async () => {
+  const res = await request(app)
+    .get("/health")
+    .set("Origin", "http://localhost:8081");
+
+  assert.equal(res.headers["x-content-type-options"], "nosniff");
+  assert.equal(res.headers["x-frame-options"], "DENY");
+  assert.equal(res.headers["access-control-allow-origin"], "*");
+});
+
 it("rejects a schedule request without a token", async () => {
   const res = await request(app).get("/api/update");
 
@@ -133,10 +143,53 @@ it("rotates a valid refresh token", async () => {
   assert.equal(typeof res.body.refreshToken, "string");
 });
 
+it("preserves profile fields after refresh", async () => {
+  const res = await request(app)
+    .post("/api/refresh")
+    .send({
+      refreshToken: signRefresh({
+        displayName: "Тестовый Пользователь",
+        email: "test@example.com",
+      }),
+    });
+
+  assert.equal(res.status, 200);
+
+  const access = jwt.verify(res.body.accessToken, JWT_SECRET, {
+    issuer: "ldap-auth-api",
+    audience: "mobile",
+  });
+  assert.equal(access.username, "test");
+  assert.equal(access.displayName, "Тестовый Пользователь");
+  assert.equal(access.email, "test@example.com");
+
+  const me = await request(app)
+    .get("/api/me")
+    .set("Authorization", `Bearer ${res.body.accessToken}`);
+  assert.equal(me.status, 200);
+  assert.equal(me.body.user.displayName, "Тестовый Пользователь");
+  assert.equal(me.body.user.email, "test@example.com");
+});
+
 it("rejects an invalid refresh token", async () => {
   const res = await request(app)
     .post("/api/refresh")
     .send({ refreshToken: "not-a-token" });
+
+  assert.equal(res.status, 401);
+  assert.equal(res.body.code, "INVALID_REFRESH");
+});
+
+it("rejects a refresh token without a subject", async () => {
+  const token = jwt.sign(
+    { type: "refresh", jti: randomUUID() },
+    JWT_SECRET,
+    { expiresIn: "5m", issuer: "ldap-auth-api", audience: "mobile" }
+  );
+
+  const res = await request(app)
+    .post("/api/refresh")
+    .send({ refreshToken: token });
 
   assert.equal(res.status, 401);
   assert.equal(res.body.code, "INVALID_REFRESH");

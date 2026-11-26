@@ -7,6 +7,7 @@ const {
   verifyRefresh,
   isRefreshActive,
   revokeRefresh,
+  revokeAllForUser,
 } = require("../auth/tokens");
 
 function buildAuthRouter({ loginLimiter }) {
@@ -51,6 +52,18 @@ function buildAuthRouter({ loginLimiter }) {
         displayName: user.displayName || null,
         email: user.mail || null,
       };
+
+      if (!profile.username) {
+        req.log.error(
+          { ldapUser: Object.keys(user) },
+          "[LDAP] profile has no sAMAccountName"
+        );
+        return res.status(502).json({
+          success: false,
+          code: "LDAP_PROFILE_INCOMPLETE",
+          message: "LDAP profile is incomplete",
+        });
+      }
 
       try {
         const accessToken = signAccess(profile);
@@ -117,20 +130,28 @@ function buildAuthRouter({ loginLimiter }) {
     }
     if (!active) {
       // jti уже использован или отозван — возможна кража.
-      // В идеале: отозвать все refresh пользователя sub.
+      // Отзываем все refresh-сессии пользователя, а не только этот jti.
+      const revoked = await revokeAllForUser(payload.sub);
       req.log.warn(
-        { jti: payload.jti, sub: payload.sub },
-        "[auth] refresh reuse detected"
+        { jti: payload.jti, sub: payload.sub, revoked },
+        "[auth] refresh reuse detected — all user sessions revoked"
       );
-      return res
-        .status(401)
-        .json({ success: false, message: "Refresh token revoked", code: "REFRESH_REVOKED" });
+      return res.status(401).json({
+        success: false,
+        message: "Refresh token revoked",
+        code: "REFRESH_REVOKED",
+      });
     }
 
     // Ротация: удаляем старый, выдаём новый
-    await revokeRefresh(payload.jti);
+    await revokeRefresh(payload.jti, payload.sub);
 
-    const profile = { username: payload.sub };
+    const profile = {
+      username: payload.sub,
+      displayName:
+        typeof payload.displayName === "string" ? payload.displayName : null,
+      email: typeof payload.email === "string" ? payload.email : null,
+    };
     try {
       const accessToken = signAccess(profile);
       const refreshToken2 = await issueRefresh(profile);
@@ -143,9 +164,11 @@ function buildAuthRouter({ loginLimiter }) {
       });
     } catch (e) {
       req.log.error({ err: e }, "[auth] refresh issuance failed");
-      return res
-        .status(503)
-        .json({ success: false, message: "Token service unavailable" });
+      return res.status(503).json({
+        success: false,
+        message: "Token service unavailable",
+        code: "TOKEN_STORE_UNAVAILABLE",
+      });
     }
   });
 
@@ -159,7 +182,7 @@ function buildAuthRouter({ loginLimiter }) {
     }
     try {
       const payload = verifyRefresh(refreshToken);
-      await revokeRefresh(payload.jti);
+      await revokeRefresh(payload.jti, payload.sub);
       req.log.info({ username: payload.sub }, "[auth] logout");
     } catch (err) {
       // Невалидный refresh на logout — не ошибка клиента, просто отвечаем 204.

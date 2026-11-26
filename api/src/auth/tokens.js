@@ -5,6 +5,15 @@ const { getRedis } = require("../redis");
 const logger = require("../logger");
 
 const RT_PREFIX = "rt:";
+const RT_USER_PREFIX = "rt:user:";
+
+function refreshKey(jti) {
+  return `${RT_PREFIX}${jti}`;
+}
+
+function userRefreshKey(sub) {
+  return `${RT_USER_PREFIX}${sub}`;
+}
 
 function signAccess(profile) {
   return jwt.sign(
@@ -18,10 +27,24 @@ function signAccess(profile) {
   );
 }
 
-async function issueRefresh(profile) {
+async function issueRefresh(profile, redisClient) {
+  if (!profile.username || typeof profile.username !== "string") {
+    const e = new Error("Refresh token requires a username");
+    e.code = "INVALID_PROFILE";
+    throw e;
+  }
+
   const jti = randomUUID();
   const token = jwt.sign(
-    { sub: profile.username, type: "refresh", jti },
+    {
+      // Профиль дублируем в refresh, чтобы после ротации access-токен
+      // не терял displayName/email и /me оставался консистентным.
+      sub: profile.username,
+      displayName: profile.displayName ?? null,
+      email: profile.email ?? null,
+      type: "refresh",
+      jti,
+    },
     config.jwt.secret,
     {
       expiresIn: config.jwt.refreshExpiresIn,
@@ -30,14 +53,22 @@ async function issueRefresh(profile) {
     }
   );
 
-  const redis = await getRedis();
+  const redis =
+    redisClient === undefined ? await getRedis() : redisClient;
   if (redis) {
     try {
-      await redis.set(
-        `${RT_PREFIX}${jti}`,
-        JSON.stringify({ sub: profile.username, iat: Date.now() }),
-        { EX: config.jwt.refreshTtlSec }
-      );
+      // Храним и сам refresh, и индекс активных jti пользователя:
+      // при обнаружении повторного использования отзываем все сессии.
+      await redis
+        .multi()
+        .set(
+          refreshKey(jti),
+          JSON.stringify({ sub: profile.username, iat: Date.now() }),
+          { EX: config.jwt.refreshTtlSec }
+        )
+        .sAdd(userRefreshKey(profile.username), jti)
+        .expire(userRefreshKey(profile.username), config.jwt.refreshTtlSec)
+        .exec();
     } catch (e) {
       logger.error({ err: e }, "[tokens] failed to store refresh");
       // Не выдаём refresh, если не смогли его сохранить —
@@ -68,7 +99,12 @@ function verifyRefresh(token) {
     issuer: config.jwt.issuer,
     audience: config.jwt.audience,
   });
-  if (payload.type !== "refresh" || !payload.jti) {
+  if (
+    payload.type !== "refresh" ||
+    !payload.jti ||
+    typeof payload.sub !== "string" ||
+    !payload.sub
+  ) {
     const e = new Error("Not a refresh token");
     e.name = "JsonWebTokenError";
     throw e;
@@ -76,8 +112,9 @@ function verifyRefresh(token) {
   return payload;
 }
 
-async function isRefreshActive(jti) {
-  const redis = await getRedis();
+async function isRefreshActive(jti, redisClient) {
+  const redis =
+    redisClient === undefined ? await getRedis() : redisClient;
   if (!redis) {
     if (config.redis.url) {
       // Не можем проверить отзыв — не выдаём 401 (клиент разлогинится),
@@ -91,7 +128,7 @@ async function isRefreshActive(jti) {
   }
 
   try {
-    const raw = await redis.get(`${RT_PREFIX}${jti}`);
+    const raw = await redis.get(refreshKey(jti));
     return raw !== null;
   } catch (e) {
     logger.error({ err: e, jti }, "[tokens] failed to check refresh");
@@ -99,8 +136,9 @@ async function isRefreshActive(jti) {
   }
 }
 
-async function revokeRefresh(jti) {
-  const redis = await getRedis();
+async function revokeRefresh(jti, sub, redisClient) {
+  const redis =
+    redisClient === undefined ? await getRedis() : redisClient;
   if (!redis) {
     if (config.redis.url) {
       logger.error(
@@ -111,9 +149,49 @@ async function revokeRefresh(jti) {
     return;
   }
   try {
-    await redis.del(`${RT_PREFIX}${jti}`);
+    await redis.del(refreshKey(jti));
+    if (sub) {
+      await redis.sRem(userRefreshKey(sub), jti);
+    }
   } catch (e) {
     logger.error({ err: e, jti }, "[tokens] failed to revoke refresh");
+  }
+}
+
+/**
+ * Отзывает все refresh-сессии пользователя. Используется при обнаружении
+ * повторного использования уже ротированного refresh-токена: это может
+ * означать кражу, поэтому завершаем не только подозрительную сессию.
+ */
+async function revokeAllForUser(sub, redisClient) {
+  if (!sub) return 0;
+
+  const redis =
+    redisClient === undefined ? await getRedis() : redisClient;
+  if (!redis) {
+    if (config.redis.url) {
+      logger.error(
+        { sub },
+        "[tokens] Redis unavailable — user sessions were not revoked"
+      );
+    }
+    return 0;
+  }
+
+  try {
+    const jtis = await redis.sMembers(userRefreshKey(sub));
+    const tx = redis.multi();
+
+    for (const jti of jtis) {
+      tx.del(refreshKey(jti));
+    }
+    tx.del(userRefreshKey(sub));
+    await tx.exec();
+
+    return jtis.length;
+  } catch (e) {
+    logger.error({ err: e, sub }, "[tokens] failed to revoke user sessions");
+    return 0;
   }
 }
 
@@ -123,4 +201,5 @@ module.exports = {
   verifyRefresh,
   isRefreshActive,
   revokeRefresh,
+  revokeAllForUser,
 };

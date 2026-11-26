@@ -62,6 +62,15 @@ const config = {
     connectTimeoutMs: int("REDIS_CONNECT_TIMEOUT_MS", 2000),
   },
 
+  cors: {
+    // Пусто = CORS выключен (production). Для web-клиента перечислите
+    // origins через запятую; "*" открывает CORS полностью.
+    origins: (process.env.CORS_ORIGINS || "")
+      .split(",")
+      .map((origin) => origin.trim())
+      .filter(Boolean),
+  },
+
   scheduleApi: {
     url: required("SCHEDULE_API_URL"),
     timeout: int("SCHEDULE_API_TIMEOUT_MS", 10000),

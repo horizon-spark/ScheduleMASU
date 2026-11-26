@@ -1,7 +1,9 @@
 const express = require("express");
 const bodyParser = require("body-parser");
 const cors = require("cors");
+const helmet = require("helmet");
 
+const config = require("./config");
 const { requestLogger } = require("./middleware/requestLogger");
 const { setupPassport, passport } = require("./ldap");
 const { createLimiters } = require("./middleware/rateLimit");
@@ -17,7 +19,27 @@ async function createApp() {
 
   app.use(requestLogger);
 
-  app.use(cors());
+  // HSTS и часть заголовков добавляет nginx в TLS-оверлее; здесь — базовые
+  // заголовки для API, в том числе когда оно запущено без TLS локально.
+  app.use(
+    helmet({
+      contentSecurityPolicy: false,
+      crossOriginResourcePolicy: false,
+      hsts: false,
+      frameguard: { action: "deny" },
+    })
+  );
+
+  // Нативному мобильному клиенту CORS не нужен. В production по умолчанию
+  // не отдаём CORS-заголовки; для web-клиента задайте CORS_ORIGINS.
+  if (config.cors.origins.includes("*")) {
+    app.use(cors());
+  } else if (config.cors.origins.length > 0) {
+    app.use(cors({ origin: config.cors.origins }));
+  } else if (config.env !== "production") {
+    app.use(cors());
+  }
+
   app.use(bodyParser.json({ limit: "100kb" }));
   app.use(passport.initialize());
 
