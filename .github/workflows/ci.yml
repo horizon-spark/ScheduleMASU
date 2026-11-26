@@ -1,4 +1,4 @@
-name: CI
+name: CI/CD
 
 on:
   push:
@@ -13,6 +13,9 @@ permissions:
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
+
+# Сервер за NAT сам забирает образы из GHCR по таймеру.
+# Здесь только тесты и публикация immutable-образов; SSH-деплоя нет.
 
 jobs:
   api:
@@ -87,6 +90,8 @@ jobs:
             type=sha,format=long
             type=ref,event=branch
             type=semver,pattern={{version}}
+            type=raw,value=staging,enable={{is_default_branch}}
+            type=raw,value=production,enable=${{ startsWith(github.ref, 'refs/tags/v') }}
             type=raw,value=latest,enable={{is_default_branch}}
 
       - name: Build and push API image
@@ -108,6 +113,8 @@ jobs:
             type=sha,format=long
             type=ref,event=branch
             type=semver,pattern={{version}}
+            type=raw,value=staging,enable={{is_default_branch}}
+            type=raw,value=production,enable=${{ startsWith(github.ref, 'refs/tags/v') }}
             type=raw,value=latest,enable={{is_default_branch}}
 
       - name: Build and push nginx image
@@ -119,52 +126,3 @@ jobs:
           labels: ${{ steps.meta-nginx.outputs.labels }}
           cache-from: type=gha
           cache-to: ${{ github.event_name != 'pull_request' && 'type=gha,mode=max' || '' }}
-
-  deploy:
-    name: Deploy
-    if: startsWith(github.ref, 'refs/tags/v') && vars.DEPLOY_ENABLED == 'true'
-    needs: docker
-    runs-on: ubuntu-latest
-    environment: production
-    steps:
-      - name: Pull and restart on server
-        uses: appleboy/ssh-action@v1
-        env:
-          GHCR_USER: ${{ secrets.GHCR_USER }}
-          GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
-        with:
-          host: ${{ secrets.DEPLOY_HOST }}
-          username: ${{ secrets.DEPLOY_USER }}
-          key: ${{ secrets.DEPLOY_SSH_KEY }}
-          envs: GHCR_USER,GHCR_TOKEN
-          script: |
-            set -euo pipefail
-            cd "${{ secrets.DEPLOY_PATH }}"
-
-            git fetch --tags --force origin
-            git checkout --force "${{ github.ref_name }}"
-
-            if [ -n "${GHCR_TOKEN:-}" ]; then
-              echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USER" --password-stdin
-            fi
-
-            export API_IMAGE="ghcr.io/horizon-spark/schedulemasu-api:sha-${{ github.sha }}"
-            export NGINX_IMAGE="ghcr.io/horizon-spark/schedulemasu-nginx:sha-${{ github.sha }}"
-
-            docker compose -f docker-compose.yml -f docker-compose.tls.yml pull api nginx
-            docker compose -f docker-compose.yml -f docker-compose.tls.yml up -d --no-build --remove-orphans
-            docker image prune -f >/dev/null
-
-            for i in $(seq 1 30); do
-              container_id="$(docker compose -f docker-compose.yml -f docker-compose.tls.yml ps -q api)"
-              status="$(docker inspect -f '{{.State.Health.Status}}' "$container_id" 2>/dev/null || echo starting)"
-              [ "$status" = "healthy" ] && break
-              sleep 2
-            done
-
-            if [ "$status" != "healthy" ]; then
-              docker compose -f docker-compose.yml -f docker-compose.tls.yml logs --tail=100 api
-              exit 1
-            fi
-
-            echo "Deployed ${{ github.ref_name }} (${{ github.sha }})"

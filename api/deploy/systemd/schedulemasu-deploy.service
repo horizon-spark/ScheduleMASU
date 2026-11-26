@@ -1,0 +1,11 @@
+[Unit]
+Description=ScheduleMASU pull deploy
+Wants=network-online.target
+After=network-online.target docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+EnvironmentFile=/etc/schedulemasu/deploy.env
+ExecStart=/usr/local/bin/schedulemasu-deploy
+Nice=10

@@ -113,7 +113,7 @@ npx expo start
 ## Production
 
 - API: TLS-оверлей, секреты, деплой и обновление — в [api/README.md](./api/README.md).
-- CI/CD: сборка образов в GitHub Actions и деплой через GHCR без сборки на сервере — в разделе [«CI/CD»](./api/README.md#cicd-сборка-в-github-actions-деплой-без-сборки-на-сервере).
+- CI/CD: сборка образов в GitHub Actions и pull-деплой через GHCR без сборки на сервере — в разделе [«CI/CD»](./api/README.md#cicd-сборка-в-github-actions-pull-деплой-на-сервере).
 - Клиент: сборка через EAS, HTTPS, подпись и публикация в RuStore — в [mobile/RELEASE.md](./mobile/RELEASE.md).
 
 ## Частые проблемы

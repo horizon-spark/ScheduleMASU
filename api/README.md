@@ -123,46 +123,89 @@ docker run --rm --add-host api:127.0.0.1 \
   nginx:1.25-alpine nginx -t
 ```
 
-## CI/CD: сборка в GitHub Actions, деплой без сборки на сервере
+## CI/CD: сборка в GitHub Actions, pull-деплой на сервере
 
-Схема:
+Сервер находится за NAT, поэтому GitHub Actions не может зайти на него по SSH.
+Схема развёрнута наоборот: CI собирает образы, а сервер сам забирает их из GHCR
+по таймеру.
 
 1. Push/PR → `.github/workflows/ci.yml` прогоняет lint, тесты и typecheck.
-2. Push в `main` → после успешных проверок GitHub Actions собирает и публикует
-   образы в GHCR:
-   - `ghcr.io/horizon-spark/schedulemasu-api:sha-<commit>`, `:main`, `:latest`;
-   - `ghcr.io/horizon-spark/schedulemasu-nginx:sha-<commit>`, `:main`, `:latest`.
-3. Push тега `v*` → те же образы получают semver-тег, а job `deploy` (если включён)
-   заходит на сервер, делает `docker compose pull` и `up -d --no-build`.
-   Node-зависимости и Dockerfile на сервере **не собираются**.
+2. Push в `main` → после проверок собираются образы:
+   - `ghcr.io/horizon-spark/schedulemasu-api:sha-<commit>`, `:main`, `:staging`, `:latest`;
+   - `ghcr.io/horizon-spark/schedulemasu-nginx:sha-<commit>`, `:main`, `:staging`, `:latest`.
+3. Push тега `v*` → образы получают `:1.0.0`, `:production` и `:sha-<commit>`.
+4. На сервере systemd-таймер запускает `deploy/deploy.sh`. Скрипт:
+   - логинится в GHCR;
+   - скачивает `production` (или `staging`) образы;
+   - по label `org.opencontainers.image.revision` переключает checkout на коммит,
+     из которого собраны образы;
+   - перезапускает compose только если изменился образ/ревизия;
+   - ждёт `healthy` у API и пишет ревизию в state-файл.
 
-### Что настроить в GitHub
+Node-зависимости и Dockerfile на сервере **не собираются**.
 
-- Repository variable `DEPLOY_ENABLED=true` — без неё job `deploy` пропускается.
-- Environment `production` — можно добавить required reviewers.
-- Secrets:
-  - `DEPLOY_HOST`, `DEPLOY_USER`, `DEPLOY_SSH_KEY`, `DEPLOY_PATH` — доступ по SSH
-    и путь к каталогу `api` на сервере;
-  - `GHCR_USER`, `GHCR_TOKEN` — только если пакеты в GHCR приватные
-    (`GHCR_TOKEN` — PAT с правом `read:packages`).
+### Установка на сервере
 
-Если сделать пакеты GHCR публичными, логин на сервере не нужен.
+На сервере должен быть checkout репозитория, например `/opt/schedulemasu`,
+заполненный `api/.env` и сертификаты в `api/nginx/certs/`.
 
-### Что должно быть на сервере
+```bash
+cd /opt/schedulemasu
 
-- checkout репозитория, например `/opt/schedulemasu`;
-- заполненный `api/.env` и сертификаты в `api/nginx/certs/` — они не хранятся в git
-  и не перезаписываются деплоем;
-- пользователь с доступом к Docker (группа `docker`).
+sudo install -m 755 api/deploy/deploy.sh /usr/local/bin/schedulemasu-deploy
+sudo mkdir -p /etc/schedulemasu /var/lib/schedulemasu
+sudo cp api/deploy/deploy.env.example /etc/schedulemasu/deploy.env
+sudo chmod 600 /etc/schedulemasu/deploy.env
 
-Деплой с тега:
+# отредактируйте DEPLOY_PATH, IMAGE_TAG, GHCR_USER/GHCR_TOKEN
+sudo nano /etc/schedulemasu/deploy.env
+
+sudo cp api/deploy/systemd/schedulemasu-deploy.service /etc/systemd/system/
+sudo cp api/deploy/systemd/schedulemasu-deploy.timer /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable --now schedulemasu-deploy.timer
+
+# первый деплой без ожидания таймера
+sudo systemctl start schedulemasu-deploy.service
+```
+
+Логи:
+
+```bash
+sudo journalctl -u schedulemasu-deploy.service -f
+systemctl list-timers schedulemasu-deploy.timer
+```
+
+Если TLS ещё не настроен, в `deploy.env` оставьте только базовый compose:
+
+```bash
+COMPOSE_FILES=-f docker-compose.yml
+```
+
+### GHCR-доступ
+
+Пакеты GHCR по умолчанию приватные. Создайте PAT с правом `read:packages`
+и укажите его в `deploy.env`:
+
+```bash
+GHCR_USER=github-user
+GHCR_TOKEN=ghp_...
+```
+
+Если сделать пакеты публичными, `GHCR_*` можно не задавать.
+
+### Релиз
 
 ```bash
 git tag v1.0.0
 git push origin v1.0.0
 ```
 
-Вручную на сервере тот же деплой выглядит так:
+После успешной сборки тег `production` обновится, и в течение нескольких минут
+таймер обновит контейнеры. Для предпродакшена можно поставить
+`IMAGE_TAG=staging` и обновляться с `main`.
+
+### Ручной деплой и откат
 
 ```bash
 cd /opt/schedulemasu/api
@@ -173,13 +216,15 @@ docker compose -f docker-compose.yml -f docker-compose.tls.yml pull api nginx
 docker compose -f docker-compose.yml -f docker-compose.tls.yml up -d --no-build --remove-orphans
 ```
 
-`--no-build` важен: если образ не скачался, деплой упадёт сразу, а не начнёт
-собирать старый код на сервере. Для локальной разработки, наоборот, используйте
-`up -d --build` — compose соберёт образы с тегами `schedulemasu-api:local` и
-`schedulemasu-nginx:local`.
+Для отката подставьте `sha-<предыдущий commit>`: старые образы остаются локально.
+`--no-build` гарантирует, что сервер не начнёт собирать образ при отсутствии
+скачанного тега.
 
-Откат — запуск с предыдущим `sha-<commit>` в `API_IMAGE`/`NGINX_IMAGE` и
-`up -d --no-build`: старые образы остаются в локальном registry сервера.
+### Если сервер не должен ходить в GitHub
+
+Поставьте `PULL_GIT=0` в `deploy.env`: скрипт будет только скачивать образы,
+а compose-файлы нужно обновлять на сервере отдельно. Для текущей схемы достаточно
+доступа по HTTPS к `ghcr.io` и `github.com`.
 
 ## Деплой вручную (без CI/CD)
 
