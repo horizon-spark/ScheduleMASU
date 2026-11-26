@@ -17,7 +17,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { getBuildings, getRooms, searchTeachers } from "../../api/schedule";
 import type { Building, Group, Room, Teacher } from "../../api/types";
-import { colors, spacing } from "../../constants/theme";
+import { colors, fonts, spacing } from "../../constants/theme";
 import type { ScheduleSubject } from "../../types/schedule";
 import { describeRequestError, getErrorSummary } from "../../utils/apiError";
 import {
@@ -535,10 +535,11 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   sheetTitleWrap: { flex: 1, paddingRight: 12 },
-  sheetTitle: { fontSize: 13, color: colors.textMuted },
+  sheetTitle: { fontFamily: fonts.body, fontSize: 13, color: colors.textMuted },
   sheetCurrent: {
+    fontFamily: fonts.headingSemibold,
     fontSize: 18,
-    fontWeight: "700",
+    lineHeight: 23,
     color: colors.text,
     marginTop: 2,
   },
@@ -561,7 +562,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   tabActive: { backgroundColor: colors.surface },
-  tabText: { fontSize: 12, color: colors.textSecondary, fontWeight: "600" },
+  tabText: {
+    fontFamily: fonts.bodySemibold,
+    fontSize: 12,
+    color: colors.textSecondary,
+  },
   tabTextActive: { color: colors.primary },
   content: { flex: 1, paddingTop: 12 },
   tabBody: { flex: 1 },
@@ -571,10 +576,12 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     paddingHorizontal: 12,
     paddingVertical: 10,
+    fontFamily: fonts.body,
     fontSize: 15,
     color: colors.text,
   },
   hint: {
+    fontFamily: fonts.body,
     color: colors.textMuted,
     fontSize: 13,
     marginTop: 12,
@@ -582,6 +589,7 @@ const styles = StyleSheet.create({
   },
   loader: { marginTop: 24, alignSelf: "center" },
   error: {
+    fontFamily: fonts.body,
     color: colors.danger,
     fontSize: 13,
     marginTop: 12,
@@ -597,8 +605,13 @@ const styles = StyleSheet.create({
     borderBottomColor: colors.borderLight,
   },
   rowText: { flex: 1, paddingRight: 8 },
-  rowTitle: { fontSize: 15, color: colors.text },
-  rowSubtitle: { fontSize: 12, color: colors.textMuted, marginTop: 2 },
+  rowTitle: { fontFamily: fonts.body, fontSize: 15, color: colors.text },
+  rowSubtitle: {
+    fontFamily: fonts.body,
+    fontSize: 12,
+    color: colors.textMuted,
+    marginTop: 2,
+  },
   pressed: { opacity: 0.7 },
   empty: {
     flex: 1,
@@ -607,12 +620,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
   },
   emptyTitle: {
+    fontFamily: fonts.headingSemibold,
     fontSize: 16,
-    fontWeight: "600",
     color: colors.text,
     marginBottom: 6,
   },
-  emptyText: { fontSize: 13, color: colors.textMuted, textAlign: "center" },
+  emptyText: {
+    fontFamily: fonts.body,
+    fontSize: 13,
+    color: colors.textMuted,
+    textAlign: "center",
+  },
   primaryButton: {
     backgroundColor: colors.primary,
     borderRadius: 22,
@@ -623,20 +641,30 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginTop: 20,
   },
-  primaryText: { color: colors.onPrimary, fontSize: 15, fontWeight: "600" },
+  primaryText: {
+    fontFamily: fonts.bodySemibold,
+    color: colors.onPrimary,
+    fontSize: 15,
+  },
   secondaryButton: {
     paddingVertical: 12,
     alignItems: "center",
     marginTop: 4,
   },
-  secondaryText: { color: colors.primary, fontSize: 14, fontWeight: "600" },
+  secondaryText: {
+    fontFamily: fonts.bodySemibold,
+    color: colors.primary,
+    fontSize: 14,
+  },
   groupName: {
+    fontFamily: fonts.heading,
     fontSize: 22,
-    fontWeight: "700",
+    lineHeight: 28,
     color: colors.text,
     marginTop: 8,
   },
   groupSpeciality: {
+    fontFamily: fonts.body,
     fontSize: 13,
     color: colors.textSecondary,
     marginTop: 6,
@@ -649,10 +677,15 @@ const styles = StyleSheet.create({
     alignSelf: "flex-start",
     paddingVertical: 4,
   },
-  backText: { color: colors.primary, fontSize: 13, fontWeight: "600" },
+  backText: {
+    fontFamily: fonts.bodySemibold,
+    color: colors.primary,
+    fontSize: 13,
+  },
   buildingTitle: {
+    fontFamily: fonts.headingSemibold,
     fontSize: 18,
-    fontWeight: "700",
+    lineHeight: 23,
     color: colors.text,
     marginTop: 2,
     marginBottom: 8,

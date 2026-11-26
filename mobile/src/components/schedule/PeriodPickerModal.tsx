@@ -17,7 +17,7 @@ import {
   getWeekParity,
   isSameDay,
 } from "../../constants/schedule";
-import { colors, radii, spacing } from "../../constants/theme";
+import { colors, fonts, radii, spacing } from "../../constants/theme";
 
 type Props = {
   visible: boolean;
@@ -178,7 +178,12 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   headerText: { flex: 1, paddingRight: 12 },
-  title: { fontSize: 18, fontWeight: "700", color: colors.text },
+  title: {
+    fontFamily: fonts.headingSemibold,
+    fontSize: 18,
+    lineHeight: 23,
+    color: colors.text,
+  },
   todayButton: {
     flexDirection: "row",
     alignItems: "center",
@@ -191,9 +196,9 @@ const styles = StyleSheet.create({
     minHeight: 40,
   },
   todayText: {
+    fontFamily: fonts.bodySemibold,
     color: colors.primary,
     fontSize: 13,
-    fontWeight: "600",
     marginLeft: spacing.xs,
   },
   close: {
@@ -213,9 +218,18 @@ const styles = StyleSheet.create({
   },
   rowSelected: { backgroundColor: colors.primarySoft },
   rowText: { flex: 1, paddingRight: 8 },
-  range: { fontSize: 15, fontWeight: "600", color: colors.text },
+  range: {
+    fontFamily: fonts.headingSemibold,
+    fontSize: 15,
+    color: colors.text,
+  },
   rangeSelected: { color: colors.primary },
-  parity: { fontSize: 12, color: colors.textMuted, marginTop: 2 },
+  parity: {
+    fontFamily: fonts.body,
+    fontSize: 12,
+    color: colors.textMuted,
+    marginTop: 2,
+  },
   paritySelected: { color: colors.primary },
   pressed: { opacity: 0.7 },
 });

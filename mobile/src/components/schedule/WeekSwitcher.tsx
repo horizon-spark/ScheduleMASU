@@ -2,7 +2,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { formatWeekRange, getWeekParity } from "../../constants/schedule";
-import { colors, spacing } from "../../constants/theme";
+import { colors, fonts, spacing } from "../../constants/theme";
 
 type Props = {
   start: Date;
@@ -86,8 +86,8 @@ const styles = StyleSheet.create({
   center: { flex: 1, alignItems: "center" },
   rangeButton: { flexDirection: "row", alignItems: "center" },
   range: {
+    fontFamily: fonts.headingSemibold,
     fontSize: 15,
-    fontWeight: "600",
     color: colors.text,
     flexShrink: 1,
   },

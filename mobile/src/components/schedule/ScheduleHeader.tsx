@@ -1,8 +1,8 @@
 // src/components/schedule/ScheduleHeader.tsx
 import { Ionicons } from "@expo/vector-icons";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Image, Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { colors, spacing } from "../../constants/theme";
+import { colors, fonts, spacing } from "../../constants/theme";
 import type { ScheduleSubject } from "../../types/schedule";
 
 type Props = {
@@ -20,37 +20,49 @@ export function ScheduleHeader({ subject, onPressSubject }: Props) {
 
   return (
     <View style={[styles.header, { paddingTop: insets.top + spacing.sm }]}>
-      {subject !== undefined ? (
-        <Pressable
-          onPress={onPressSubject}
-          disabled={!onPressSubject}
-          accessibilityRole="button"
-          accessibilityLabel="Выбрать расписание"
-          style={({ pressed }) => [styles.subject, pressed && styles.pressed]}
-        >
-          <View style={styles.text}>
-            <Text style={styles.title} numberOfLines={1}>
-              {title}
-            </Text>
-            {subtitle ? (
-              <Text style={styles.subtitle} numberOfLines={1}>
-                {subtitle}
+      <View style={styles.headerRow}>
+        <Image
+          source={require("../../../assets/images/brand/logo-mark-white.png")}
+          style={styles.brandMark}
+          resizeMode="contain"
+          accessibilityLabel="МАУ"
+        />
+
+        {subject !== undefined ? (
+          <Pressable
+            onPress={onPressSubject}
+            disabled={!onPressSubject}
+            accessibilityRole="button"
+            accessibilityLabel="Выбрать расписание"
+            style={({ pressed }) => [
+              styles.subject,
+              pressed && styles.pressed,
+            ]}
+          >
+            <View style={styles.text}>
+              <Text style={styles.title} numberOfLines={1}>
+                {title}
               </Text>
+              {subtitle ? (
+                <Text style={styles.subtitle} numberOfLines={1}>
+                  {subtitle}
+                </Text>
+              ) : null}
+            </View>
+            {onPressSubject ? (
+              <Ionicons
+                name="chevron-down"
+                size={20}
+                color={colors.onPrimaryMuted}
+              />
             ) : null}
-          </View>
-          {onPressSubject ? (
-            <Ionicons
-              name="chevron-down"
-              size={20}
-              color={colors.onPrimaryMuted}
-            />
-          ) : null}
-        </Pressable>
-      ) : (
-        <Text style={styles.title} numberOfLines={1}>
-          Расписание
-        </Text>
-      )}
+          </Pressable>
+        ) : (
+          <Text style={[styles.title, styles.text]} numberOfLines={1}>
+            Расписание
+          </Text>
+        )}
+      </View>
     </View>
   );
 }
@@ -61,9 +73,29 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     paddingBottom: spacing.md,
   },
-  subject: { flexDirection: "row", alignItems: "center" },
+  headerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  brandMark: {
+    width: 34,
+    height: 15,
+    marginRight: spacing.md,
+  },
+  subject: { flex: 1, flexDirection: "row", alignItems: "center" },
   text: { flex: 1, paddingRight: spacing.sm },
-  title: { color: colors.onPrimary, fontSize: 20, fontWeight: "700" },
-  subtitle: { color: colors.onPrimaryMuted, fontSize: 12, marginTop: 2 },
+  title: {
+    color: colors.onPrimary,
+    fontFamily: fonts.heading,
+    fontSize: 20,
+    lineHeight: 25,
+  },
+  subtitle: {
+    color: colors.onPrimaryMuted,
+    fontFamily: fonts.body,
+    fontSize: 12,
+    lineHeight: 16,
+    marginTop: 2,
+  },
   pressed: { opacity: 0.7 },
 });

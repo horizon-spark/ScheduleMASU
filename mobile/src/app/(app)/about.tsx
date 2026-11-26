@@ -4,6 +4,7 @@ import Constants from "expo-constants";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import {
+  Image,
   Linking,
   Pressable,
   ScrollView,
@@ -12,7 +13,12 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { colors, radii, spacing } from "../../constants/theme";
+import {
+  colors,
+  fonts,
+  radii,
+  spacing,
+} from "../../constants/theme";
 
 const SUPPORT_EMAIL = "mauverse@mauniver.ru";
 
@@ -54,8 +60,13 @@ export default function AboutScreen() {
         ]}
       >
         <View style={styles.hero}>
-          <View style={styles.logo}>
-            <Ionicons name="school-outline" size={42} color={colors.primary} />
+          <View style={styles.brandPlate}>
+            <Image
+              source={require("../../../assets/images/brand/logo-full.png")}
+              style={styles.brandLogo}
+              resizeMode="contain"
+              accessibilityLabel="Мурманский арктический университет"
+            />
           </View>
           <Text style={styles.name}>MAUverse</Text>
           <Text style={styles.version}>
@@ -114,39 +125,49 @@ const styles = StyleSheet.create({
   },
   backText: {
     color: colors.primary,
+    fontFamily: fonts.bodySemibold,
     fontSize: 14,
-    fontWeight: "600",
     marginLeft: 2,
   },
   headerTitle: {
     marginTop: spacing.sm,
+    fontFamily: fonts.heading,
     fontSize: 22,
-    fontWeight: "700",
+    lineHeight: 28,
     color: colors.text,
   },
   content: { padding: spacing.lg },
   hero: { alignItems: "center", marginVertical: spacing.lg },
-  logo: {
-    width: 84,
-    height: 84,
-    borderRadius: 42,
-    backgroundColor: colors.primarySoft,
+  brandPlate: {
+    width: 264,
     alignItems: "center",
-    justifyContent: "center",
+    backgroundColor: colors.surface,
+    borderRadius: radii.lg,
+    borderWidth: 1,
+    borderColor: colors.borderLight,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.lg,
     marginBottom: spacing.md,
   },
+  brandLogo: {
+    width: 240,
+    height: 49,
+  },
   name: {
+    fontFamily: fonts.heading,
     fontSize: 26,
-    fontWeight: "700",
+    lineHeight: 32,
     color: colors.text,
   },
   version: {
     marginTop: spacing.xs,
+    fontFamily: fonts.body,
     fontSize: 13,
     color: colors.textSecondary,
   },
   description: {
     marginTop: spacing.sm,
+    fontFamily: fonts.body,
     fontSize: 14,
     lineHeight: 20,
     color: colors.textSecondary,
@@ -160,28 +181,32 @@ const styles = StyleSheet.create({
   },
   row: { minHeight: 44, justifyContent: "center" },
   rowLabel: {
+    fontFamily: fonts.body,
     fontSize: 13,
     color: colors.textSecondary,
     marginBottom: 2,
   },
   link: {
+    fontFamily: fonts.bodySemibold,
     fontSize: 16,
-    fontWeight: "600",
     color: colors.primary,
   },
   sectionTitle: {
+    fontFamily: fonts.headingSemibold,
     fontSize: 16,
-    fontWeight: "700",
+    lineHeight: 22,
     color: colors.text,
     marginBottom: spacing.sm,
   },
   text: {
+    fontFamily: fonts.body,
     fontSize: 13,
     lineHeight: 19,
     color: colors.textSecondary,
   },
   footer: {
     marginTop: spacing.sm,
+    fontFamily: fonts.body,
     fontSize: 12,
     color: colors.textMuted,
     textAlign: "center",

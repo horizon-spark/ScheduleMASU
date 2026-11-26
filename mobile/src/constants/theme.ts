@@ -1,25 +1,55 @@
 // src/constants/theme.ts
+// Палитра и шрифты по фирменному стилю МАУ: https://mauniver.ru/info/design/
+const brandBlue = "#0064BE";
+const brandSky = "#008CFA";
+const brandRed = "#F9423A";
+const brandGreen = "#14898F";
+
+export const fonts = {
+  heading: "Montserrat_700Bold",
+  headingSemibold: "Montserrat_600SemiBold",
+  body: "OpenSans_400Regular",
+  bodySemibold: "OpenSans_600SemiBold",
+} as const;
+
 export const colors = {
-  primary: "#0055A5",
-  primaryPressed: "#004A90",
-  primarySoft: "#EAF2FB",
-  background: "#F4F6F8",
+  // Основная палитра
+  brandBlue,
+  brandSky,
+  brandRed,
+  brandGreen,
+  primary: brandBlue,
+  primaryPressed: "#00539C",
+  primarySoft: "#E6F0FA",
+  secondary: brandSky,
+  secondarySoft: "#E6F4FF",
+
+  // Фоны и поверхности
+  background: "#F2F5FA",
   surface: "#FFFFFF",
-  surfaceMuted: "#F8FAFC",
-  text: "#1F2933",
-  textSecondary: "#52606D",
-  // Раньше был #888: на белом это ~3.5:1 и плохо читается в 11–12 px.
+  surfaceMuted: "#FAFAFA",
+
+  // Текст
+  text: "#1E1E1E",
+  textSecondary: "#666666",
+  // Для мелкого текста используем чуть более тёмный, чем #999, серый.
   textMuted: "#6B7280",
-  border: "#DDE3E8",
-  borderLight: "#EEF1F4",
-  accent: "#B45309",
-  accentSoft: "#FEF3E2",
+
+  // Границы
+  border: "#DDDDDD",
+  borderLight: "#EEEEEE",
+
+  // Акценты и статусы
+  accent: brandRed,
+  accentSoft: "#FDECEC",
   danger: "#B42318",
-  dangerSoft: "#FDECEE",
-  success: "#067647",
-  successSoft: "#ECFDF3",
+  dangerSoft: "#FDECEC",
+  success: "#0F766E",
+  successSoft: "#E6F7F7",
   warningBackground: "#FFF3CD",
   warningText: "#7A5B16",
+
+  // Служебное
   onPrimary: "#FFFFFF",
   onPrimaryMuted: "rgba(255,255,255,0.75)",
   onPrimarySubtle: "rgba(255,255,255,0.85)",
@@ -44,14 +74,14 @@ export const radii = {
 } as const;
 
 export const typography = {
-  display: { fontSize: 28, lineHeight: 34, fontWeight: "700" },
-  title: { fontSize: 22, lineHeight: 28, fontWeight: "700" },
-  headline: { fontSize: 18, lineHeight: 24, fontWeight: "700" },
-  body: { fontSize: 15, lineHeight: 21, fontWeight: "400" },
-  bodyStrong: { fontSize: 15, lineHeight: 21, fontWeight: "600" },
-  caption: { fontSize: 13, lineHeight: 18, fontWeight: "400" },
-  captionStrong: { fontSize: 13, lineHeight: 18, fontWeight: "600" },
-  micro: { fontSize: 11, lineHeight: 15, fontWeight: "600" },
+  display: { fontFamily: fonts.heading, fontSize: 28, lineHeight: 34 },
+  title: { fontFamily: fonts.heading, fontSize: 22, lineHeight: 28 },
+  headline: { fontFamily: fonts.headingSemibold, fontSize: 18, lineHeight: 24 },
+  body: { fontFamily: fonts.body, fontSize: 15, lineHeight: 21 },
+  bodyStrong: { fontFamily: fonts.bodySemibold, fontSize: 15, lineHeight: 21 },
+  caption: { fontFamily: fonts.body, fontSize: 13, lineHeight: 18 },
+  captionStrong: { fontFamily: fonts.bodySemibold, fontSize: 13, lineHeight: 18 },
+  micro: { fontFamily: fonts.bodySemibold, fontSize: 11, lineHeight: 15 },
 } as const;
 
 export const shadows = {

@@ -1,7 +1,7 @@
 import * as SplashScreen from "expo-splash-screen";
 import { Component, type ErrorInfo, type ReactNode } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
-import { colors, radii, spacing } from "../constants/theme";
+import { colors, fonts, radii, spacing } from "../constants/theme";
 
 type Props = {
   children: ReactNode;
@@ -65,13 +65,15 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
   title: {
+    fontFamily: fonts.heading,
     fontSize: 20,
-    fontWeight: "700",
+    lineHeight: 26,
     color: colors.text,
     textAlign: "center",
     marginBottom: spacing.sm,
   },
   text: {
+    fontFamily: fonts.body,
     fontSize: 14,
     lineHeight: 20,
     color: colors.textSecondary,
@@ -89,8 +91,8 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     color: colors.onPrimary,
+    fontFamily: fonts.bodySemibold,
     fontSize: 15,
-    fontWeight: "600",
   },
   pressed: { opacity: 0.75 },
 });

@@ -3,6 +3,7 @@ import { useRouter } from "expo-router";
 import { useRef, useState, type ComponentRef } from "react";
 import {
   ActivityIndicator,
+  Image,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -14,7 +15,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LoginError } from "../../api/auth";
-import { colors, radii, spacing } from "../../constants/theme";
+import { colors, fonts, radii, spacing } from "../../constants/theme";
 import { useAuth } from "../../context/AuthContext";
 
 export default function LoginScreen() {
@@ -72,8 +73,13 @@ export default function LoginScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.hero}>
-          <View style={styles.logo}>
-            <Ionicons name="school-outline" size={38} color={colors.primary} />
+          <View style={styles.brandPlate}>
+            <Image
+              source={require("../../../assets/images/brand/logo-full.png")}
+              style={styles.brandLogo}
+              resizeMode="contain"
+              accessibilityLabel="Мурманский арктический университет"
+            />
           </View>
           <Text style={styles.title}>MAUverse</Text>
           <Text style={styles.subtitle}>
@@ -198,23 +204,31 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.xl,
   },
   hero: { alignItems: "center", marginBottom: spacing.xl },
-  logo: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    backgroundColor: colors.primarySoft,
+  brandPlate: {
+    width: 264,
     alignItems: "center",
-    justifyContent: "center",
-    marginBottom: spacing.md,
+    backgroundColor: colors.surface,
+    borderRadius: radii.lg,
+    borderWidth: 1,
+    borderColor: colors.borderLight,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.lg,
+    marginBottom: spacing.lg,
+  },
+  brandLogo: {
+    width: 240,
+    height: 49,
   },
   title: {
+    fontFamily: fonts.heading,
     fontSize: 28,
-    fontWeight: "700",
+    lineHeight: 34,
     color: colors.text,
     letterSpacing: 0.2,
   },
   subtitle: {
     marginTop: spacing.xs,
+    fontFamily: fonts.body,
     fontSize: 13,
     lineHeight: 19,
     color: colors.textSecondary,
@@ -227,8 +241,8 @@ const styles = StyleSheet.create({
     padding: spacing.lg,
   },
   label: {
+    fontFamily: fonts.bodySemibold,
     fontSize: 13,
-    fontWeight: "600",
     color: colors.textSecondary,
     marginBottom: spacing.xs,
   },
@@ -239,6 +253,7 @@ const styles = StyleSheet.create({
     borderRadius: radii.md,
     paddingHorizontal: spacing.md,
     paddingVertical: 12,
+    fontFamily: fonts.body,
     fontSize: 16,
     color: colors.text,
     backgroundColor: colors.surface,
@@ -266,6 +281,7 @@ const styles = StyleSheet.create({
   errorText: {
     flex: 1,
     color: colors.danger,
+    fontFamily: fonts.body,
     fontSize: 13,
     lineHeight: 18,
   },
@@ -278,10 +294,15 @@ const styles = StyleSheet.create({
     marginTop: spacing.lg,
   },
   buttonDisabled: { opacity: 0.5 },
-  buttonText: { color: colors.onPrimary, fontSize: 16, fontWeight: "600" },
+  buttonText: {
+    color: colors.onPrimary,
+    fontFamily: fonts.bodySemibold,
+    fontSize: 16,
+  },
   pressed: { opacity: 0.75 },
   hint: {
     marginTop: spacing.md,
+    fontFamily: fonts.body,
     fontSize: 11,
     lineHeight: 16,
     color: colors.textMuted,

@@ -28,7 +28,6 @@ export default function AppLayout() {
           },
           tabBarLabelStyle: {
             ...typography.micro,
-            fontWeight: "500",
           },
           tabBarItemStyle: {
             paddingVertical: 4,

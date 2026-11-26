@@ -4,6 +4,7 @@ import { StyleSheet, Text, View } from "react-native";
 import type { Lesson } from "../../api/types";
 import {
   colors,
+  fonts,
   radii,
   shadows,
   spacing,
@@ -29,7 +30,10 @@ function getTypeTone(type: string): Tone {
     return { background: colors.successSoft, foreground: colors.success };
   }
   if (normalized.includes("лаб")) {
-    return { background: colors.accentSoft, foreground: colors.accent };
+    return {
+      background: colors.secondarySoft,
+      foreground: colors.primaryPressed,
+    };
   }
   if (normalized.includes("экзам") || normalized.includes("зач")) {
     return { background: colors.dangerSoft, foreground: colors.danger };
@@ -120,9 +124,10 @@ const styles = StyleSheet.create({
     fontVariant: ["tabular-nums"],
   },
   endTime: {
-    ...typography.micro,
+    fontFamily: fonts.body,
+    fontSize: 11,
+    lineHeight: 15,
     color: colors.textMuted,
-    fontWeight: "500",
     marginTop: 3,
     fontVariant: ["tabular-nums"],
   },
@@ -139,6 +144,7 @@ const styles = StyleSheet.create({
   },
   subject: {
     ...typography.bodyStrong,
+    fontFamily: fonts.headingSemibold,
     color: colors.text,
     marginBottom: 5,
   },
@@ -155,7 +161,6 @@ const styles = StyleSheet.create({
   },
   typeText: {
     ...typography.micro,
-    fontWeight: "600",
   },
   meta: {
     ...typography.caption,
@@ -181,7 +186,6 @@ const styles = StyleSheet.create({
   groups: {
     ...typography.micro,
     color: colors.primary,
-    fontWeight: "500",
     flexShrink: 1,
   },
 });

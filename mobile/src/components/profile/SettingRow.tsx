@@ -54,10 +54,9 @@ const styles = StyleSheet.create({
     width: 92,
   },
   value: {
-    ...typography.body,
+    ...typography.bodyStrong,
     flex: 1,
     color: colors.text,
-    fontWeight: "600",
     marginRight: spacing.sm,
   },
 });

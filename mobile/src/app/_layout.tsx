@@ -1,5 +1,10 @@
 import { Stack, useRouter, useSegments } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
+import { useFonts } from "expo-font";
+import { Montserrat_600SemiBold } from "@expo-google-fonts/montserrat/600SemiBold";
+import { Montserrat_700Bold } from "@expo-google-fonts/montserrat/700Bold";
+import { OpenSans_400Regular } from "@expo-google-fonts/open-sans/400Regular";
+import { OpenSans_600SemiBold } from "@expo-google-fonts/open-sans/600SemiBold";
 import { useEffect } from "react";
 import { AppErrorBoundary } from "../components/AppErrorBoundary";
 import { AuthProvider, useAuth } from "../context/AuthContext";
@@ -50,6 +55,24 @@ function RootNavigator() {
 }
 
 export default function RootLayout() {
+  const [fontsLoaded, fontError] = useFonts({
+    Montserrat_600SemiBold,
+    Montserrat_700Bold,
+    OpenSans_400Regular,
+    OpenSans_600SemiBold,
+  });
+
+  useEffect(() => {
+    if (fontError) {
+      console.warn("[fonts] failed to load brand fonts", fontError);
+    }
+  }, [fontError]);
+
+  if (!fontsLoaded && !fontError) {
+    // Native splash остаётся видимым до загрузки шрифтов и сессии.
+    return null;
+  }
+
   return (
     <AppErrorBoundary>
       <AuthProvider>

@@ -9,7 +9,7 @@ import {
 } from "react-native";
 import type { Lesson } from "../../api/types";
 import { formatUpdateTime } from "../../constants/schedule";
-import { colors, spacing, typography } from "../../constants/theme";
+import { colors, fonts, spacing, typography } from "../../constants/theme";
 import type { ScheduleSubjectKind } from "../../types/schedule";
 import { LessonCard } from "./LessonCard";
 
@@ -108,9 +108,10 @@ const styles = StyleSheet.create({
     maxWidth: 260,
   },
   updated: {
-    ...typography.micro,
+    fontFamily: fonts.body,
+    fontSize: 11,
+    lineHeight: 15,
     color: colors.textMuted,
-    fontWeight: "400",
     textAlign: "center",
     marginTop: spacing.sm,
     marginBottom: spacing.sm,
