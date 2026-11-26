@@ -65,7 +65,7 @@ Production-приложение обязано ходить только по HT
 
 - в `EXPO_PUBLIC_API_BASE_URL` — домен с доверенным сертификатом;
 - `usesCleartextTraffic` для production выключается автоматически (`app.config.js`);
-- серверная часть: TLS-оверлей nginx, сертификат и деплой описаны в README `ExpressAPIGateway`.
+- серверная часть: TLS-оверлей nginx, сертификат и деплой описаны в README `api/`.
 
 Пока публичного домена нет, preview-сборка может работать по HTTP с `EXPO_PUBLIC_ALLOW_HTTP=1`. В production этот флаг не задаётся.
 

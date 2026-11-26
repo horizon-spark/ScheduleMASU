@@ -87,6 +87,16 @@ function buildAuthRouter({ loginLimiter }) {
     }
 
     const active = await isRefreshActive(payload.jti);
+    if (active === null) {
+      // Redis настроен, но недоступен. Это временная ошибка, а не отзыв
+      // токена: клиент не должен разлогиниваться, достаточно повторить позже.
+      res.set("Retry-After", "5");
+      return res.status(503).json({
+        success: false,
+        message: "Token service unavailable, retry later",
+        code: "TOKEN_STORE_UNAVAILABLE",
+      });
+    }
     if (!active) {
       // jti уже использован или отозван — возможна кража.
       // В идеале: отозвать все refresh пользователя sub.

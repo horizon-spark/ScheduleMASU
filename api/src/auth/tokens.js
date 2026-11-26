@@ -44,9 +44,18 @@ async function issueRefresh(profile) {
       // иначе он будет невалиден при первом же refresh.
       throw e;
     }
+  } else if (config.redis.url) {
+    // Redis настроен, но недоступен. Выдавать refresh без возможности
+    // отзыва нельзя: это обходит ротацию и logout.
+    logger.error(
+      "[tokens] Redis unavailable — refusing to issue non-revocable refresh"
+    );
+    const e = new Error("Token store unavailable");
+    e.code = "REDIS_UNAVAILABLE";
+    throw e;
   } else {
-    // Без Redis refresh не работает (негде хранить jti).
-    // В dev это допустимо, в prod — нет.
+    // Redis не настроен вовсе. В dev это допустимо, в prod — нет
+    // (config не даст стартовать без REDIS_URL).
     logger.warn("[tokens] Redis disabled — refresh tokens are not revocable");
   }
 
@@ -69,14 +78,38 @@ function verifyRefresh(token) {
 
 async function isRefreshActive(jti) {
   const redis = await getRedis();
-  if (!redis) return true; // без Redis не можем проверить — доверяем подписи
-  const raw = await redis.get(`${RT_PREFIX}${jti}`);
-  return raw !== null;
+  if (!redis) {
+    if (config.redis.url) {
+      // Не можем проверить отзыв — не выдаём 401 (клиент разлогинится),
+      // а сообщаем вызывающему коду о временной недоступности хранилища.
+      logger.error(
+        "[tokens] Redis unavailable — cannot verify refresh token"
+      );
+      return null;
+    }
+    return true; // Redis не настроен: проверять нечем (dev)
+  }
+
+  try {
+    const raw = await redis.get(`${RT_PREFIX}${jti}`);
+    return raw !== null;
+  } catch (e) {
+    logger.error({ err: e, jti }, "[tokens] failed to check refresh");
+    return null;
+  }
 }
 
 async function revokeRefresh(jti) {
   const redis = await getRedis();
-  if (!redis) return;
+  if (!redis) {
+    if (config.redis.url) {
+      logger.error(
+        { jti },
+        "[tokens] Redis unavailable — refresh token was not revoked"
+      );
+    }
+    return;
+  }
   try {
     await redis.del(`${RT_PREFIX}${jti}`);
   } catch (e) {

@@ -4,6 +4,16 @@ const net = require("net");
 const config = require("../config");
 const { getRedis } = require("../redis");
 
+function withTimeout(promise, ms, message) {
+  let timer;
+  const timeout = new Promise((_, reject) => {
+    timer = setTimeout(() => reject(new Error(message)), ms);
+    if (typeof timer.unref === "function") timer.unref();
+  });
+
+  return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
+}
+
 function buildHealthRouter() {
   const router = express.Router();
 
@@ -20,16 +30,22 @@ function buildHealthRouter() {
   // readiness — «можно слать трафик»
   router.get("/ready", async (req, res) => {
     const checks = { redis: "unknown", ldap: "unknown" };
+    const redisConfigured = Boolean(config.redis.url);
     let ok = true;
 
     // Redis
     try {
       const redis = await getRedis();
-      if (redis) {
-        await redis.ping();
-        checks.redis = "ok";
-      } else {
+      if (!redisConfigured) {
         checks.redis = "disabled";
+      } else if (!redis) {
+        // REDIS_URL задан, но клиент не готов: это не «выключено»,
+        // а реальная деградация — readiness должен вернуть 503.
+        checks.redis = "fail";
+        ok = false;
+      } else {
+        await withTimeout(redis.ping(), 2000, "redis ping timeout");
+        checks.redis = "ok";
       }
     } catch (e) {
       req.log.error({ err: e }, "[ready] redis check failed");

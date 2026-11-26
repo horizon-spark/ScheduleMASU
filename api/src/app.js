@@ -35,8 +35,21 @@ async function createApp() {
 
   // eslint-disable-next-line no-unused-vars
   app.use((err, req, res, next) => {
-    (req.log || require("./logger")).error({ err }, "unhandled error");
-    res.status(500).json({ success: false, message: "Internal error" });
+    const log = req.log || require("./logger");
+    const status = Number(err.status || err.statusCode) || 500;
+
+    if (status >= 500) {
+      log.error({ err }, "unhandled error");
+      return res
+        .status(500)
+        .json({ success: false, message: "Internal error" });
+    }
+
+    // Ошибки body-parser (битый JSON, превышен лимит) — это ошибка клиента,
+    // а не 500. Детали наружу не отдаём.
+    log.warn({ err, status }, "request error");
+    const message = status === 413 ? "Payload too large" : "Bad request";
+    return res.status(status).json({ success: false, message });
   });
 
   return app;

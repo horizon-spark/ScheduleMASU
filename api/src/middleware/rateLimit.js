@@ -1,6 +1,7 @@
 const rateLimit = require("express-rate-limit");
 const { RedisStore } = require("rate-limit-redis");
 const { getRedis } = require("../redis");
+const config = require("../config");
 const logger = require("../logger");
 
 async function buildStore(prefix) {
@@ -18,8 +19,10 @@ async function createLimiters() {
 
   if (!loginStore) {
     logger.warn(
-      "[rate-limit] MemoryStore used: counts are per-process. " +
-        "Set REDIS_URL for cluster-wide limits."
+      config.redis.url
+        ? "[rate-limit] Redis unavailable: MemoryStore used, counts are per-process"
+        : "[rate-limit] MemoryStore used: counts are per-process. " +
+            "Set REDIS_URL for cluster-wide limits."
     );
   }
 

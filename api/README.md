@@ -1,4 +1,4 @@
-# ExpressAPIGateway
+# ScheduleMASU API
 
 Прокси между мобильным приложением ScheduleMASU и LDAP/API расписания МАУ.
 
@@ -12,7 +12,7 @@
 
 ## Требования
 
-- Node.js 20+
+- Node.js 22+
 - Redis
 - Доступ к LDAP и внешнему API расписания
 - Docker и Docker Compose (для деплоя)
@@ -24,6 +24,8 @@
 - `NODE_ENV=production`
 - `JWT_SECRET` длиной **не менее 32 символов** — иначе процесс не стартует;
 - `REDIS_URL` — иначе не работают отзыв refresh-токенов и общий rate-limit;
+  при недоступном Redis API стартует, но `/ready` и вход/refresh отвечают 503;
+- `REDIS_CONNECT_TIMEOUT_MS` — сколько ждать Redis при старте (по умолчанию 2000);
 - `SCHEDULE_API_BEARER_TOKEN` — токен внешнего API;
 - `LDAP_*` — реквизиты сервисной учётной записи.
 
@@ -42,8 +44,16 @@ node -e "console.log(require('crypto').randomBytes(48).toString('base64'))"
 ```bash
 npm ci
 cp .env.example .env
+# для локального запуска без Docker:
+#   NODE_ENV=development
+#   REDIS_URL=redis://127.0.0.1:6379 (или удалите строку — Redis не обязателен)
 npm run dev
 ```
+
+`.env.example` рассчитан на production: в нём `NODE_ENV=production` и короткий
+`JWT_SECRET`, поэтому без правки этих значений процесс намеренно не стартует.
+Redis при старте ждём не дольше `REDIS_CONNECT_TIMEOUT_MS`; если он недоступен,
+API поднимается, `/ready` отдаёт 503, а вход/refresh — 503 до восстановления.
 
 ## Docker (HTTP, dev)
 

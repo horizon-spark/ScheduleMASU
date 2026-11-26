@@ -56,6 +56,10 @@ const config = {
 
   redis: {
     url: process.env.REDIS_URL || null,
+    // Сколько ждать Redis при старте, прежде чем продолжить в деградированном
+    // режиме. Без этого node-redis переподключается бесконечно и API не
+    // начинает слушать порт.
+    connectTimeoutMs: int("REDIS_CONNECT_TIMEOUT_MS", 2000),
   },
 
   scheduleApi: {

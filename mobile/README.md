@@ -10,7 +10,7 @@ MAUverse — мобильное приложение Мурманского ар
 - Expo Router (`src/app`)
 - Axios + refresh-токены, SecureStore
 - AsyncStorage для выбранного субъекта и кеша расписания
-- API — прокси [`ExpressAPIGateway`](https://github.com/horizon-spark/ExpressGateway)
+- API — прокси в папке [`api/`](../api) этого репозитория
 
 ## Запуск
 

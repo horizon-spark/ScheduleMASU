@@ -9,7 +9,7 @@
 
 ## Требования
 
-- Node.js 20+ и npm (в проекте закоммичены `package-lock.json`, lockfile v3).
+- Node.js 22+ и npm (в проекте закоммичены `package-lock.json`, lockfile v3).
 - Docker Engine и Docker Compose v2 — для запуска API.
 - Приложение Expo Go на телефоне или development build клиента.
 - Для API — доступ к корпоративному LDAP и внешнему API расписания: настройки обязательны в любом окружении.
@@ -72,10 +72,15 @@ cd api
 npm ci
 docker run -d --rm --name schedulemasu-redis -p 6379:6379 redis:7-alpine
 # в api/.env укажите REDIS_URL=redis://127.0.0.1:6379
+# и NODE_ENV=development, иначе сработают production-проверки секрета
 npm run dev
 ```
 
-Redis можно и не запускать: в development API работает без него, но refresh-токены не отзываются, а rate-limit считается в памяти процесса.
+Redis можно и не запускать: удалите или закомментируйте `REDIS_URL` — тогда
+в development API работает без него, но refresh-токены не отзываются, а
+rate-limit считается в памяти процесса. Если `REDIS_URL` задан, но Redis
+недоступен, API всё равно стартует (с ограниченным ожиданием), `/ready`
+возвращает 503, а вход/refresh отвечают 503 до восстановления Redis.
 
 ### Терминал 2 — мобильный клиент
 
