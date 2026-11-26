@@ -24,9 +24,15 @@ function buildAuthRouter({ loginLimiter }) {
           res.set("Retry-After", "5");
           return res
             .status(503)
-            .json({ success: false, message: "LDAP unavailable, retry later" });
+            .json({
+              success: false,
+              code: "LDAP_UNAVAILABLE",
+              message: "LDAP unavailable, retry later",
+            });
         }
-        return res.status(500).json({ success: false, message: "LDAP error" });
+        return res
+          .status(500)
+          .json({ success: false, code: "LDAP_ERROR", message: "LDAP error" });
       }
 
       if (!user) {
@@ -35,7 +41,9 @@ function buildAuthRouter({ loginLimiter }) {
           typeof info === "string"
             ? info
             : (info && info.message) || "Invalid credentials";
-        return res.status(401).json({ success: false, message: msg });
+        return res
+          .status(401)
+          .json({ success: false, code: "INVALID_CREDENTIALS", message: msg });
       }
 
       const profile = {
@@ -57,9 +65,11 @@ function buildAuthRouter({ loginLimiter }) {
         });
       } catch (e) {
         req.log.error({ err: e }, "[auth] token issuance failed");
-        return res
-          .status(503)
-          .json({ success: false, message: "Token service unavailable" });
+        return res.status(503).json({
+          success: false,
+          code: "TOKEN_STORE_UNAVAILABLE",
+          message: "Token service unavailable",
+        });
       }
     })(req, res, next);
   });
@@ -78,12 +88,20 @@ function buildAuthRouter({ loginLimiter }) {
       payload = verifyRefresh(refreshToken);
     } catch (err) {
       if (err.name === "TokenExpiredError") {
-        return res
-          .status(401)
-          .json({ success: false, message: "Refresh token expired", code: "REFRESH_EXPIRED" });
+        return res.status(401).json({
+          success: false,
+          message: "Refresh token expired",
+          code: "REFRESH_EXPIRED",
+        });
       }
       req.log.warn({ err }, "[auth] invalid refresh token");
-      return res.status(401).json({ success: false, message: "Invalid refresh token" });
+      return res
+        .status(401)
+        .json({
+          success: false,
+          code: "INVALID_REFRESH",
+          message: "Invalid refresh token",
+        });
     }
 
     const active = await isRefreshActive(payload.jti);

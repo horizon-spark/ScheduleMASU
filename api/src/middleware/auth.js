@@ -7,7 +7,9 @@ function requireAuth(req, res, next) {
 
   if (!token) {
     req.log?.warn("[auth] no token");
-    return res.status(401).json({ success: false, message: "No token" });
+    return res
+      .status(401)
+      .json({ success: false, code: "NO_TOKEN", message: "No token" });
   }
 
   try {
@@ -19,7 +21,9 @@ function requireAuth(req, res, next) {
     // refresh-токен нельзя использовать как access
     if (payload.type !== "access") {
       req.log?.warn("[auth] wrong token type");
-      return res.status(401).json({ success: false, message: "Invalid token" });
+      return res
+        .status(401)
+        .json({ success: false, code: "INVALID_TOKEN", message: "Invalid token" });
     }
 
     req.user = payload;
@@ -32,7 +36,9 @@ function requireAuth(req, res, next) {
         .json({ success: false, message: "Token expired", code: "TOKEN_EXPIRED" });
     }
     req.log?.warn({ err }, "[auth] invalid token");
-    return res.status(401).json({ success: false, message: "Invalid token" });
+    return res
+      .status(401)
+      .json({ success: false, code: "INVALID_TOKEN", message: "Invalid token" });
   }
 }
 

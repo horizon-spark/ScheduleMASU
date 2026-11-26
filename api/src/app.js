@@ -33,7 +33,6 @@ async function createApp() {
     res.status(404).json({ success: false, message: "Not found" });
   });
 
-  // eslint-disable-next-line no-unused-vars
   app.use((err, req, res, next) => {
     const log = req.log || require("./logger");
     const status = Number(err.status || err.statusCode) || 500;

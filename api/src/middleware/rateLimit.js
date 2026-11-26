@@ -34,7 +34,11 @@ async function createLimiters() {
     legacyHeaders: false,
     skipSuccessfulRequests: true,
     passOnStoreError: true,
-    message: { success: false, message: "Too many login attempts" },
+    message: {
+      success: false,
+      code: "RATE_LIMITED",
+      message: "Too many login attempts",
+    },
     keyGenerator: (req) => {
       const username = String(req.body?.username || "").toLowerCase();
       const ip = req.ip || req.socket.remoteAddress || "unknown";
@@ -49,7 +53,11 @@ async function createLimiters() {
     standardHeaders: true,
     legacyHeaders: false,
     passOnStoreError: true,
-    message: { success: false, message: "Too many requests" },
+    message: {
+      success: false,
+      code: "RATE_LIMITED",
+      message: "Too many requests",
+    },
     keyGenerator: (req) => req.ip,
   });
 

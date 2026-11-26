@@ -55,6 +55,13 @@ npm run dev
 Redis при старте ждём не дольше `REDIS_CONNECT_TIMEOUT_MS`; если он недоступен,
 API поднимается, `/ready` отдаёт 503, а вход/refresh — 503 до восстановления.
 
+## Тесты
+
+```bash
+npm test        # node:test + supertest, внешние зависимости замоканы
+npm run lint    # eslint
+```
+
 ## Docker (HTTP, dev)
 
 Базовый compose использует `.env`, где `NODE_ENV=production`. С коротким `JWT_SECRET`
