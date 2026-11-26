@@ -1,12 +1,28 @@
 import { Stack, useRouter, useSegments } from "expo-router";
+import * as SplashScreen from "expo-splash-screen";
 import { useEffect } from "react";
-import { ActivityIndicator, View } from "react-native";
+import { AppErrorBoundary } from "../components/AppErrorBoundary";
 import { AuthProvider, useAuth } from "../context/AuthContext";
+
+// Держим native splash, пока восстанавливаем сохранённую сессию.
+SplashScreen.preventAutoHideAsync().catch(() => {});
+SplashScreen.setOptions({ duration: 300, fade: true });
 
 function RootNavigator() {
   const { accessToken, isLoading } = useAuth();
   const segments = useSegments();
   const router = useRouter();
+
+  useEffect(() => {
+    if (isLoading) return;
+
+    // Скрываем splash после восстановления сессии, чтобы не показывать
+    // экран входа на долю секунды перед редиректом.
+    const frame = requestAnimationFrame(() => {
+      SplashScreen.hideAsync().catch(() => {});
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [isLoading]);
 
   useEffect(() => {
     if (isLoading) return;
@@ -22,11 +38,7 @@ function RootNavigator() {
   }, [accessToken, isLoading, segments, router]);
 
   if (isLoading) {
-    return (
-      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-        <ActivityIndicator size="large" />
-      </View>
-    );
+    return null;
   }
 
   return (
@@ -39,8 +51,10 @@ function RootNavigator() {
 
 export default function RootLayout() {
   return (
-    <AuthProvider>
-      <RootNavigator />
-    </AuthProvider>
+    <AppErrorBoundary>
+      <AuthProvider>
+        <RootNavigator />
+      </AuthProvider>
+    </AppErrorBoundary>
   );
 }

@@ -45,6 +45,14 @@ export default function AppLayout() {
           ),
         }}
       />
+      <Tabs.Screen
+        name="about"
+        options={{
+          href: null,
+          title: "О приложении",
+          tabBarStyle: { display: "none" },
+        }}
+      />
       </Tabs>
     </>
   );

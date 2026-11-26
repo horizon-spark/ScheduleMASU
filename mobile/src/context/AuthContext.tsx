@@ -17,7 +17,7 @@ import {
   setUnauthorizedHandler,
   USER_KEY,
 } from "../api/client";
-import { clearScheduleCache } from "../utils/scheduleCache";
+import { clearScheduleCache, pruneScheduleCache } from "../utils/scheduleCache";
 import { clearProfileSelection } from "../utils/storage";
 
 interface AuthContextType {
@@ -41,6 +41,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   // ── Восстановление сессии при старте ─────────────────────────
   useEffect(() => {
+    // Кеш расписания не должен расти бесконечно между сессиями.
+    void pruneScheduleCache();
+
     (async () => {
       try {
         const [a, r, u] = await Promise.all([

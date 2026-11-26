@@ -7,9 +7,16 @@ type Props = {
   value: string;
   onPress: () => void;
   disabled?: boolean;
+  iconName?: "chevron-down" | "chevron-forward";
 };
 
-export function SettingRow({ label, value, onPress, disabled }: Props) {
+export function SettingRow({
+  label,
+  value,
+  onPress,
+  disabled,
+  iconName = "chevron-down",
+}: Props) {
   return (
     <TouchableOpacity
       style={[styles.button, disabled && { opacity: 0.5 }]}
@@ -18,7 +25,7 @@ export function SettingRow({ label, value, onPress, disabled }: Props) {
     >
       <Text style={styles.label}>{label}:</Text>
       <Text style={styles.value}>{value}</Text>
-      <Ionicons name="chevron-down" size={18} color="#0055A5" />
+      <Ionicons name={iconName} size={18} color="#0055A5" />
     </TouchableOpacity>
   );
 }
