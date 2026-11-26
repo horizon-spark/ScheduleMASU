@@ -17,6 +17,8 @@ import {
   setUnauthorizedHandler,
   USER_KEY,
 } from "../api/client";
+import { clearScheduleCache } from "../utils/scheduleCache";
+import { clearProfileSelection } from "../utils/storage";
 
 interface AuthContextType {
   accessToken: string | null;
@@ -68,7 +70,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setTokens({ accessToken: null, refreshToken: null });
       setAccessToken(null);
       setUser(null);
-      // SecureStore уже почищен в client.ts
+      // SecureStore может быть уже почищен в client.ts, но повторная
+      // очистка гарантирует, что сессия не восстановится после перезапуска.
+      void Promise.all([
+        SecureStore.deleteItemAsync(ACCESS_KEY),
+        SecureStore.deleteItemAsync(REFRESH_KEY),
+        SecureStore.deleteItemAsync(USER_KEY),
+        clearProfileSelection(),
+        clearScheduleCache(),
+      ]).catch((e) => console.warn("Failed to clear session data", e));
     });
 
     // Клиент успешно ротировал токены → сохраняем

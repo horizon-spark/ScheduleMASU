@@ -1,5 +1,9 @@
 // src/api/client.ts
-import axios, { AxiosError, InternalAxiosRequestConfig } from "axios";
+import axios, {
+  AxiosError,
+  InternalAxiosRequestConfig,
+  isAxiosError,
+} from "axios";
 import * as SecureStore from "expo-secure-store";
 
 const baseUrl = process.env.EXPO_PUBLIC_API_BASE_URL;
@@ -175,12 +179,23 @@ api.interceptors.response.use(
       return api(original);
     } catch (err) {
       flushQueue(err, null);
-      currentTokens = { accessToken: null, refreshToken: null };
-      // Чистим SecureStore асинхронно и уведомляем контекст
-      SecureStore.deleteItemAsync(ACCESS_KEY).catch(() => {});
-      SecureStore.deleteItemAsync(REFRESH_KEY).catch(() => {});
-      SecureStore.deleteItemAsync(USER_KEY).catch(() => {});
-      onUnauthorized?.();
+
+      // 401/400 — refresh действительно больше не валиден, сессию пора
+      // завершать. Сетевые ошибки и 5xx (например, временно недоступен
+      // Redis на прокси) не должны разлогинивать: токены оставляем,
+      // чтобы повторный запрос мог обновить сессию позже.
+      const status = isAxiosError(err) ? err.response?.status : undefined;
+      const permanent = !isAxiosError(err) || status === 400 || status === 401;
+
+      if (permanent) {
+        currentTokens = { accessToken: null, refreshToken: null };
+        // Чистим SecureStore асинхронно и уведомляем контекст
+        SecureStore.deleteItemAsync(ACCESS_KEY).catch(() => {});
+        SecureStore.deleteItemAsync(REFRESH_KEY).catch(() => {});
+        SecureStore.deleteItemAsync(USER_KEY).catch(() => {});
+        onUnauthorized?.();
+      }
+
       return Promise.reject(err);
     } finally {
       isRefreshing = false;
