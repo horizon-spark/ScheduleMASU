@@ -121,7 +121,65 @@ docker run --rm --add-host api:127.0.0.1 \
   nginx:1.25-alpine nginx -t
 ```
 
-## Деплой и обновление
+## CI/CD: сборка в GitHub Actions, деплой без сборки на сервере
+
+Схема:
+
+1. Push/PR → `.github/workflows/ci.yml` прогоняет lint, тесты и typecheck.
+2. Push в `main` → после успешных проверок GitHub Actions собирает и публикует
+   образы в GHCR:
+   - `ghcr.io/horizon-spark/schedulemasu-api:sha-<commit>`, `:main`, `:latest`;
+   - `ghcr.io/horizon-spark/schedulemasu-nginx:sha-<commit>`, `:main`, `:latest`.
+3. Push тега `v*` → те же образы получают semver-тег, а job `deploy` (если включён)
+   заходит на сервер, делает `docker compose pull` и `up -d --no-build`.
+   Node-зависимости и Dockerfile на сервере **не собираются**.
+
+### Что настроить в GitHub
+
+- Repository variable `DEPLOY_ENABLED=true` — без неё job `deploy` пропускается.
+- Environment `production` — можно добавить required reviewers.
+- Secrets:
+  - `DEPLOY_HOST`, `DEPLOY_USER`, `DEPLOY_SSH_KEY`, `DEPLOY_PATH` — доступ по SSH
+    и путь к каталогу `api` на сервере;
+  - `GHCR_USER`, `GHCR_TOKEN` — только если пакеты в GHCR приватные
+    (`GHCR_TOKEN` — PAT с правом `read:packages`).
+
+Если сделать пакеты GHCR публичными, логин на сервере не нужен.
+
+### Что должно быть на сервере
+
+- checkout репозитория, например `/opt/schedulemasu`;
+- заполненный `api/.env` и сертификаты в `api/nginx/certs/` — они не хранятся в git
+  и не перезаписываются деплоем;
+- пользователь с доступом к Docker (группа `docker`).
+
+Деплой с тега:
+
+```bash
+git tag v1.0.0
+git push origin v1.0.0
+```
+
+Вручную на сервере тот же деплой выглядит так:
+
+```bash
+cd /opt/schedulemasu/api
+export API_IMAGE=ghcr.io/horizon-spark/schedulemasu-api:sha-<commit>
+export NGINX_IMAGE=ghcr.io/horizon-spark/schedulemasu-nginx:sha-<commit>
+
+docker compose -f docker-compose.yml -f docker-compose.tls.yml pull api nginx
+docker compose -f docker-compose.yml -f docker-compose.tls.yml up -d --no-build --remove-orphans
+```
+
+`--no-build` важен: если образ не скачался, деплой упадёт сразу, а не начнёт
+собирать старый код на сервере. Для локальной разработки, наоборот, используйте
+`up -d --build` — compose соберёт образы с тегами `schedulemasu-api:local` и
+`schedulemasu-nginx:local`.
+
+Откат — запуск с предыдущим `sha-<commit>` в `API_IMAGE`/`NGINX_IMAGE` и
+`up -d --no-build`: старые образы остаются в локальном registry сервера.
+
+## Деплой вручную (без CI/CD)
 
 ```bash
 git pull
