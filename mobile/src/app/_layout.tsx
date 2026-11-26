@@ -19,7 +19,7 @@ function RootNavigator() {
     } else if (accessToken && inAuthGroup) {
       router.replace("/(app)");
     }
-  }, [accessToken, isLoading, segments]);
+  }, [accessToken, isLoading, segments, router]);
 
   if (isLoading) {
     return (

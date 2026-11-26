@@ -1,4 +1,4 @@
-export interface ApiResponse<T> {
+export interface ApiResponse {
   update: string;
   success: boolean;
 }
@@ -62,37 +62,37 @@ export interface Lesson {
 }
 
 // Ответы API
-export interface FacultiesResponse extends ApiResponse<Faculty> {
+export interface FacultiesResponse extends ApiResponse {
   courses: Faculty[]; // Обратите внимание: в API поле называется courses, но содержит факультеты
 }
 
-export interface CoursesResponse extends ApiResponse<Course> {
+export interface CoursesResponse extends ApiResponse {
   courses: Course[];
 }
 
-export interface GroupsResponse extends ApiResponse<Group> {
+export interface GroupsResponse extends ApiResponse {
   groups: Group[];
 }
 
-export interface ScheduleResponse extends ApiResponse<Lesson> {
+export interface ScheduleResponse extends ApiResponse {
   timetable: Lesson[];
 }
 
-export interface BuildingsResponse extends ApiResponse<Building> {
+export interface BuildingsResponse extends ApiResponse {
   buildings: Building[];
 }
 
-export interface RoomsResponse extends ApiResponse<Room> {
+export interface RoomsResponse extends ApiResponse {
   rooms: Room[];
 }
 
-export interface TeachersResponse extends ApiResponse<Teacher> {
+export interface TeachersResponse extends ApiResponse {
   teachers: Teacher[];
 }
 
-export interface DatesResponse extends ApiResponse<string> {
+export interface DatesResponse extends ApiResponse {
   dates: string[];
 }
 
 /** Ответ GET /update — время последнего обновления расписания на сервере. */
-export type UpdateResponse = ApiResponse<unknown>;
+export type UpdateResponse = ApiResponse;

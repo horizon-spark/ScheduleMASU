@@ -4,9 +4,10 @@ import { Lesson } from "../../api/types";
 import { colors, radii, spacing } from "../../constants/theme";
 import type { ScheduleSubjectKind } from "../../types/schedule";
 
-function splitSlot(slot: string): { start: string; end?: string } {
-  const [start, end] = slot.split(" - ");
-  return { start: start?.trim() ?? slot, end: end?.trim() };
+function splitSlot(slot: unknown): { start: string; end?: string } {
+  const value = typeof slot === "string" ? slot : "";
+  const [start, end] = value.split(" - ");
+  return { start: start?.trim() || value, end: end?.trim() };
 }
 
 type Props = {
@@ -16,6 +17,7 @@ type Props = {
 
 export function LessonCard({ item, subjectKind }: Props) {
   const { start, end } = splitSlot(item.slot);
+  const subGroups = Array.isArray(item.subGroups) ? item.subGroups : [];
 
   // В расписании аудитории сама аудитория — уже заголовок, не дублируем
   const meta = [
@@ -49,10 +51,10 @@ export function LessonCard({ item, subjectKind }: Props) {
           </Text>
         ) : null}
 
-        {item.subGroups.length > 0 ? (
+        {subGroups.length > 0 ? (
           <Text style={styles.groups} numberOfLines={2}>
             {subjectKind === "group" ? "Подгруппы" : "Группы"}:{" "}
-            {item.subGroups.join(", ")}
+            {subGroups.join(", ")}
           </Text>
         ) : null}
       </View>

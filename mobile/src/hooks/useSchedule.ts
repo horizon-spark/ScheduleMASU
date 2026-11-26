@@ -66,6 +66,7 @@ export function useSchedule(pagerRef: PagerRef) {
   const [isWeekLoading, setIsWeekLoading] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [currentPage, setCurrentPage] = useState(0);
+  const [initialPage, setInitialPage] = useState(0);
 
   const initialPageRef = useRef(0);
   const subjectRef = useRef<ScheduleSubject | null>(null);
@@ -234,6 +235,7 @@ export function useSchedule(pagerRef: PagerRef) {
               WEEKDAYS_COUNT - 1,
             );
             initialPageRef.current = dayIndex;
+            setInitialPage(dayIndex);
             setCurrentPage(dayIndex);
           }
 
@@ -355,6 +357,7 @@ export function useSchedule(pagerRef: PagerRef) {
 
       const dayIndex = Math.min(getDayIndex(new Date()), WEEKDAYS_COUNT - 1);
       initialPageRef.current = dayIndex;
+      setInitialPage(dayIndex);
       setCurrentPage(dayIndex);
     }
 
@@ -386,7 +389,7 @@ export function useSchedule(pagerRef: PagerRef) {
     isRefreshing,
     currentPage,
     setCurrentPage,
-    initialPage: initialPageRef.current,
+    initialPage,
     weekStart,
     goToPrevWeek,
     goToNextWeek,

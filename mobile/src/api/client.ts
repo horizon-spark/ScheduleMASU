@@ -1,8 +1,9 @@
 // src/api/client.ts
-import axios, {
-  AxiosError,
-  InternalAxiosRequestConfig,
+import {
+  create,
   isAxiosError,
+  type AxiosError,
+  type InternalAxiosRequestConfig,
 } from "axios";
 import * as SecureStore from "expo-secure-store";
 
@@ -59,14 +60,14 @@ export function setTokensRefreshedHandler(fn: TokensRefreshedHandler | null) {
 }
 
 // ── Основной инстанс ─────────────────────────────────────────
-export const api = axios.create({
+export const api = create({
   baseURL: baseUrl,
   timeout: 15_000,
   headers: { "Content-Type": "application/json" },
 });
 
 // ── «Голый» инстанс для /refresh и /logout: без интерсепторов ──
-const raw = axios.create({
+const raw = create({
   baseURL: baseUrl,
   timeout: 15_000,
   headers: { "Content-Type": "application/json" },
@@ -87,10 +88,10 @@ api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
 //   • При ошибке refresh — flush с reject, onUnauthorized → signOut.
 //   • ВАЖНО: login/refresh/logout не должны зацикливаться.
 let isRefreshing = false;
-let pendingQueue: Array<{
+let pendingQueue: {
   resolve: (token: string) => void;
   reject: (err: unknown) => void;
-}> = [];
+}[] = [];
 
 function flushQueue(err: unknown, token: string | null) {
   for (const p of pendingQueue) {

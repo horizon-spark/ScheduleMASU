@@ -150,16 +150,18 @@ export default function ScheduleScreen() {
         </View>
       )}
 
-      <SubjectPickerModal
-        visible={isPickerVisible}
-        active={subject}
-        group={group}
-        onClose={() => setIsPickerVisible(false)}
-        onSelect={(next) => {
-          setIsPickerVisible(false);
-          selectSubject(next);
-        }}
-      />
+      {isPickerVisible ? (
+        <SubjectPickerModal
+          visible
+          active={subject}
+          group={group}
+          onClose={() => setIsPickerVisible(false)}
+          onSelect={(next) => {
+            setIsPickerVisible(false);
+            selectSubject(next);
+          }}
+        />
+      ) : null}
 
       <PeriodPickerModal
         visible={isPeriodPickerVisible}

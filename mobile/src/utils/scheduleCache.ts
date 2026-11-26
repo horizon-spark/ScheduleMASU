@@ -1,6 +1,7 @@
 // src/utils/scheduleCache.ts
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import type { Lesson } from "../api/types";
+import { normalizeLesson } from "../api/normalize";
 
 const PREFIX = "scheduleCache:";
 const CACHE_VERSION = 1;
@@ -28,14 +29,33 @@ export function makeScheduleCacheKey(
   return `${subjectKey}:${start}:${end}`;
 }
 
-function isCachedSchedule(value: unknown): value is CachedSchedule {
-  if (!value || typeof value !== "object") return false;
+/**
+ * Приводит запись кеша к безопасному виду. Кеш мог быть записан старой
+ * версией приложения или повреждён, поэтому не доверяем его форме.
+ */
+function parseCachedSchedule(value: unknown): CachedSchedule | null {
+  if (!value || typeof value !== "object") return null;
+
   const candidate = value as Partial<CachedSchedule>;
-  return (
-    candidate.version === CACHE_VERSION &&
-    Array.isArray(candidate.timetable) &&
-    typeof candidate.fetchedAt === "number"
-  );
+  if (
+    candidate.version !== CACHE_VERSION ||
+    !Array.isArray(candidate.timetable) ||
+    typeof candidate.fetchedAt !== "number" ||
+    !Number.isFinite(candidate.fetchedAt)
+  ) {
+    return null;
+  }
+
+  const timetable = candidate.timetable
+    .map(normalizeLesson)
+    .filter((item): item is Lesson => item !== null);
+
+  return {
+    version: CACHE_VERSION,
+    timetable,
+    update: typeof candidate.update === "string" ? candidate.update : null,
+    fetchedAt: candidate.fetchedAt,
+  };
 }
 
 export async function readScheduleCache(
@@ -49,10 +69,11 @@ export async function readScheduleCache(
     if (!raw) return null;
 
     const parsed: unknown = JSON.parse(raw);
-    if (!isCachedSchedule(parsed)) return null;
+    const entry = parseCachedSchedule(parsed);
+    if (!entry) return null;
 
-    memory.set(key, parsed);
-    return parsed;
+    memory.set(key, entry);
+    return entry;
   } catch {
     return null;
   }
@@ -62,7 +83,15 @@ export async function writeScheduleCache(
   key: string,
   value: StoredSchedule,
 ): Promise<void> {
-  const entry: CachedSchedule = { version: CACHE_VERSION, ...value };
+  const entry: CachedSchedule = {
+    version: CACHE_VERSION,
+    timetable: (Array.isArray(value.timetable) ? value.timetable : [])
+      .map(normalizeLesson)
+      .filter((item): item is Lesson => item !== null),
+    update: typeof value.update === "string" ? value.update : null,
+    fetchedAt: value.fetchedAt,
+  };
+
   memory.set(key, entry);
   try {
     await AsyncStorage.setItem(PREFIX + key, JSON.stringify(entry));

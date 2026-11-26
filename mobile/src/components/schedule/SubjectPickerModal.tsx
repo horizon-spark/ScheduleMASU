@@ -58,11 +58,8 @@ export function SubjectPickerModal({
   const [tab, setTab] = useState<TabKey>(active?.kind ?? "group");
   const insets = useSafeAreaInsets();
 
-  useEffect(() => {
-    if (visible) {
-      setTab(active?.kind ?? "group");
-    }
-  }, [visible, active?.kind]);
+  // Компонент монтируется при открытии модалки (см. ScheduleScreen),
+  // поэтому начальный tab всегда соответствует активному субъекту.
 
   return (
     <Modal
@@ -212,16 +209,23 @@ function TeacherTab({ active, onSelect }: SubjectTabProps) {
 
   const trimmed = query.trim();
 
-  useEffect(() => {
-    if (trimmed.length < 2) {
+  const handleQueryChange = (value: string) => {
+    setQuery(value);
+
+    if (value.trim().length < 2) {
       setResults([]);
       setError(null);
       setLoading(false);
-      return;
+    } else {
+      setError(null);
+      setLoading(true);
     }
+  };
+
+  useEffect(() => {
+    if (trimmed.length < 2) return;
 
     let isActive = true;
-    setLoading(true);
 
     const timer = setTimeout(() => {
       searchTeachers(trimmed)
@@ -256,7 +260,7 @@ function TeacherTab({ active, onSelect }: SubjectTabProps) {
     <View style={styles.tabBody}>
       <TextInput
         value={query}
-        onChangeText={setQuery}
+        onChangeText={handleQueryChange}
         placeholder="Фамилия или ФИО"
         placeholderTextColor="#999"
         autoCapitalize="none"
@@ -323,7 +327,6 @@ function RoomTab({ active, onSelect }: SubjectTabProps) {
 
   useEffect(() => {
     let isActive = true;
-    setLoading(true);
 
     getBuildings()
       .then((res) => {

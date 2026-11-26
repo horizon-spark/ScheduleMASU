@@ -31,6 +31,8 @@ npm run android           # Android
 npm run ios               # iOS (в релизе пока не используется)
 npm run web               # web-сборка
 npx tsc --noEmit          # typecheck
+npm run lint              # eslint (expo lint)
+npm test                  # unit-тесты (vitest)
 
 # web-export — это production-бандл, поэтому нужен HTTPS-адрес API:
 EXPO_PUBLIC_API_BASE_URL=https://example.com/api npx expo export --platform web
