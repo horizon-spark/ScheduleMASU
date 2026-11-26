@@ -1,6 +1,11 @@
 // src/components/profile/SettingRow.tsx
 import { Ionicons } from "@expo/vector-icons";
 import { StyleSheet, Text, TouchableOpacity } from "react-native";
+import {
+  colors,
+  spacing,
+  typography,
+} from "../../constants/theme";
 
 type Props = {
   label: string;
@@ -19,13 +24,16 @@ export function SettingRow({
 }: Props) {
   return (
     <TouchableOpacity
-      style={[styles.button, disabled && { opacity: 0.5 }]}
+      style={[styles.button, disabled && styles.disabled]}
       onPress={onPress}
       disabled={disabled}
+      accessibilityRole="button"
     >
-      <Text style={styles.label}>{label}:</Text>
-      <Text style={styles.value}>{value}</Text>
-      <Ionicons name={iconName} size={18} color="#0055A5" />
+      <Text style={styles.label}>{label}</Text>
+      <Text style={styles.value} numberOfLines={1}>
+        {value}
+      </Text>
+      <Ionicons name={iconName} size={18} color={colors.primary} />
     </TouchableOpacity>
   );
 }
@@ -34,10 +42,22 @@ const styles = StyleSheet.create({
   button: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: 12,
+    minHeight: 48,
+    paddingVertical: spacing.sm,
     borderBottomWidth: 1,
-    borderBottomColor: "#EEE",
+    borderBottomColor: colors.borderLight,
   },
-  label: { fontSize: 14, color: "#666", width: 90 },
-  value: { flex: 1, fontSize: 16, color: "#333", fontWeight: "500" },
+  disabled: { opacity: 0.5 },
+  label: {
+    ...typography.caption,
+    color: colors.textSecondary,
+    width: 92,
+  },
+  value: {
+    ...typography.body,
+    flex: 1,
+    color: colors.text,
+    fontWeight: "600",
+    marginRight: spacing.sm,
+  },
 });

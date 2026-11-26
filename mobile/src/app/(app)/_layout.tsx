@@ -2,6 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { Tabs } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import type { ColorValue } from "react-native";
+import { colors, typography } from "../../constants/theme";
 
 /**
  * tabBarIcon отдаёт ColorValue (string | number | symbol | null),
@@ -17,42 +18,57 @@ export default function AppLayout() {
     <>
       <StatusBar style="light" />
       <Tabs
-        screenOptions={{ tabBarActiveTintColor: "#0055A5", headerShown: false }}
+        screenOptions={{
+          tabBarActiveTintColor: colors.primary,
+          tabBarInactiveTintColor: colors.textMuted,
+          headerShown: false,
+          tabBarStyle: {
+            backgroundColor: colors.surface,
+            borderTopColor: colors.borderLight,
+          },
+          tabBarLabelStyle: {
+            ...typography.micro,
+            fontWeight: "500",
+          },
+          tabBarItemStyle: {
+            paddingVertical: 4,
+          },
+        }}
       >
-      <Tabs.Screen
-        name="index"
-        options={{
-          title: "Расписание",
-          tabBarIcon: ({ color }) => (
-            <Ionicons
-              name="calendar-outline"
-              size={24}
-              color={toIconColor(color)}
-            />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="profile"
-        options={{
-          title: "Профиль",
-          tabBarIcon: ({ color }) => (
-            <Ionicons
-              name="person-outline"
-              size={24}
-              color={toIconColor(color)}
-            />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="about"
-        options={{
-          href: null,
-          title: "О приложении",
-          tabBarStyle: { display: "none" },
-        }}
-      />
+        <Tabs.Screen
+          name="index"
+          options={{
+            title: "Расписание",
+            tabBarIcon: ({ color, focused }) => (
+              <Ionicons
+                name={focused ? "calendar" : "calendar-outline"}
+                size={24}
+                color={toIconColor(color)}
+              />
+            ),
+          }}
+        />
+        <Tabs.Screen
+          name="profile"
+          options={{
+            title: "Профиль",
+            tabBarIcon: ({ color, focused }) => (
+              <Ionicons
+                name={focused ? "person" : "person-outline"}
+                size={24}
+                color={toIconColor(color)}
+              />
+            ),
+          }}
+        />
+        <Tabs.Screen
+          name="about"
+          options={{
+            href: null,
+            title: "О приложении",
+            tabBarStyle: { display: "none" },
+          }}
+        />
       </Tabs>
     </>
   );

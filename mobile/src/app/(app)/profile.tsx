@@ -1,4 +1,5 @@
 // app/(app)/profile.tsx
+import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import {
@@ -15,13 +16,31 @@ import { Divider, InfoCard, InfoRow } from "../../components/profile/InfoCard";
 import { LogoutButton } from "../../components/profile/LogoutButton";
 import { SelectionModal } from "../../components/profile/SelectionModal";
 import { SettingRow } from "../../components/profile/SettingRow";
-import { colors, radii, spacing } from "../../constants/theme";
+import {
+  colors,
+  radii,
+  spacing,
+  typography,
+} from "../../constants/theme";
 import { useAuth } from "../../context/AuthContext";
 import { useProfileSelection } from "../../hooks/useProfileSelection";
 import { clearScheduleCache } from "../../utils/scheduleCache";
 import { clearProfileSelection } from "../../utils/storage";
 
 type ModalType = "faculty" | "course" | "group" | null;
+
+function getInitials(name?: string | null, username?: string | null): string {
+  const source = (name || username || "").trim();
+
+  if (!source) return "МА";
+
+  const parts = source.split(/\s+/).filter(Boolean);
+  if (parts.length >= 2) {
+    return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
+  }
+
+  return source.slice(0, 2).toUpperCase();
+}
 
 export default function ProfileScreen() {
   const { user, signOut } = useAuth();
@@ -70,12 +89,43 @@ export default function ProfileScreen() {
     ]);
   };
 
+  const header = (
+    <View style={[styles.header, { paddingTop: insets.top + spacing.sm }]}>
+      <Text style={styles.headerEyebrow}>Профиль</Text>
+      <View style={styles.identity}>
+        <View style={styles.avatar}>
+          <Text style={styles.avatarText}>
+            {getInitials(user?.displayName, user?.username)}
+          </Text>
+        </View>
+        <View style={styles.identityText}>
+          <Text style={styles.name} numberOfLines={1}>
+            {user?.displayName || user?.username || "Пользователь"}
+          </Text>
+          <Text style={styles.identityMeta} numberOfLines={1}>
+            {user?.email || user?.username || "Доменная учётная запись"}
+          </Text>
+          {selectedGroup ? (
+            <View style={styles.groupChip}>
+              <Ionicons
+                name="people-outline"
+                size={13}
+                color={colors.onPrimary}
+              />
+              <Text style={styles.groupChipText} numberOfLines={1}>
+                {selectedGroup.group}
+              </Text>
+            </View>
+          ) : null}
+        </View>
+      </View>
+    </View>
+  );
+
   if (isInitialLoading) {
     return (
       <View style={styles.container}>
-        <View style={[styles.header, { paddingTop: insets.top + spacing.md }]}>
-          <Text style={styles.headerTitle}>Ваш профиль</Text>
-        </View>
+        {header}
         <ActivityIndicator
           size="large"
           color={colors.primary}
@@ -86,12 +136,10 @@ export default function ProfileScreen() {
   }
 
   return (
-    <ScrollView style={styles.container}>
-      <View style={[styles.header, { paddingTop: insets.top + spacing.md }]}>
-        <Text style={styles.headerTitle}>Ваш профиль</Text>
-      </View>
+    <View style={styles.container}>
+      {header}
 
-      <View style={styles.content}>
+      <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
         {error ? (
           <View style={styles.errorCard}>
             <Text style={styles.errorText}>{error}</Text>
@@ -107,17 +155,13 @@ export default function ProfileScreen() {
           </View>
         ) : null}
 
-        <InfoCard title="Основная информация">
+        <InfoCard title="Учётная запись">
+          <InfoRow label="Логин" value={user?.username || "Неизвестно"} />
+          <Divider />
           <InfoRow
-            label="Полное имя"
-            value={user?.displayName || "Неизвестно"}
+            label="Факультет"
+            value={selectedFaculty?.facultee || "Не выбран"}
           />
-          {user?.email ? (
-            <>
-              <Divider />
-              <InfoRow label="Email" value={user.email} />
-            </>
-          ) : null}
           <Divider />
           <InfoRow
             label="Группа"
@@ -156,7 +200,7 @@ export default function ProfileScreen() {
         </InfoCard>
 
         <LogoutButton onPress={handleLogout} loading={isSigningOut} />
-      </View>
+      </ScrollView>
 
       <SelectionModal
         visible={modalType === "faculty"}
@@ -187,7 +231,7 @@ export default function ProfileScreen() {
         onSelect={selectGroup}
         onClose={() => setModalType(null)}
       />
-    </ScrollView>
+    </View>
   );
 }
 
@@ -195,21 +239,73 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   header: {
     backgroundColor: colors.primary,
-    paddingHorizontal: spacing.xl,
+    paddingHorizontal: spacing.lg,
     paddingBottom: spacing.lg,
   },
-  headerTitle: { color: colors.onPrimary, fontSize: 20, fontWeight: "bold" },
+  headerEyebrow: {
+    ...typography.micro,
+    color: colors.onPrimaryMuted,
+    textTransform: "uppercase",
+    letterSpacing: 0.8,
+  },
+  identity: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: spacing.sm,
+  },
+  avatar: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: "rgba(255,255,255,0.16)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.28)",
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: spacing.md,
+  },
+  avatarText: {
+    ...typography.headline,
+    color: colors.onPrimary,
+  },
+  identityText: { flex: 1 },
+  name: {
+    ...typography.title,
+    color: colors.onPrimary,
+  },
+  identityMeta: {
+    ...typography.caption,
+    color: colors.onPrimarySubtle,
+    marginTop: 2,
+  },
+  groupChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    alignSelf: "flex-start",
+    gap: spacing.xs,
+    backgroundColor: "rgba(255,255,255,0.14)",
+    borderRadius: radii.pill,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 3,
+    marginTop: spacing.sm,
+  },
+  groupChipText: {
+    ...typography.micro,
+    color: colors.onPrimary,
+    fontWeight: "500",
+    flexShrink: 1,
+  },
+  scroll: { flex: 1 },
   content: { padding: spacing.lg },
   errorCard: {
-    backgroundColor: "#FDECEE",
+    backgroundColor: colors.dangerSoft,
     borderRadius: radii.md,
     padding: spacing.md,
     marginBottom: spacing.lg,
   },
   errorText: {
+    ...typography.caption,
     color: colors.danger,
-    fontSize: 13,
-    lineHeight: 18,
   },
   retryButton: {
     alignSelf: "flex-start",
@@ -217,12 +313,11 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.xs,
     paddingHorizontal: spacing.md,
     borderRadius: radii.pill,
-    backgroundColor: colors.primarySoft,
+    backgroundColor: colors.surface,
   },
   retryText: {
+    ...typography.captionStrong,
     color: colors.primary,
-    fontSize: 13,
-    fontWeight: "600",
   },
   pressed: { opacity: 0.7 },
 });

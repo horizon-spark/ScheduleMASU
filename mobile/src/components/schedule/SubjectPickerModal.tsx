@@ -17,7 +17,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { getBuildings, getRooms, searchTeachers } from "../../api/schedule";
 import type { Building, Group, Room, Teacher } from "../../api/types";
-import { spacing } from "../../constants/theme";
+import { colors, spacing } from "../../constants/theme";
 import type { ScheduleSubject } from "../../types/schedule";
 import { describeRequestError, getErrorSummary } from "../../utils/apiError";
 import {
@@ -75,6 +75,7 @@ export function SubjectPickerModal({
         <Pressable style={styles.backdrop} onPress={onClose} />
 
         <View style={[styles.sheet, { paddingBottom: insets.bottom + spacing.md }]}>
+          <View style={styles.handle} />
           <View style={styles.sheetHeader}>
             <View style={styles.sheetTitleWrap}>
               <Text style={styles.sheetTitle}>Расписание для</Text>
@@ -89,7 +90,7 @@ export function SubjectPickerModal({
               accessibilityLabel="Закрыть"
               style={styles.close}
             >
-              <Ionicons name="close" size={22} color="#333" />
+              <Ionicons name="close" size={22} color={colors.text} />
             </Pressable>
           </View>
 
@@ -262,7 +263,7 @@ function TeacherTab({ active, onSelect }: SubjectTabProps) {
         value={query}
         onChangeText={handleQueryChange}
         placeholder="Фамилия или ФИО"
-        placeholderTextColor="#999"
+        placeholderTextColor={colors.textMuted}
         autoCapitalize="none"
         autoCorrect={false}
         style={styles.input}
@@ -272,7 +273,7 @@ function TeacherTab({ active, onSelect }: SubjectTabProps) {
       {trimmed.length < 2 ? (
         <Text style={styles.hint}>Введите минимум 2 символа</Text>
       ) : loading ? (
-        <ActivityIndicator color="#0055A5" style={styles.loader} />
+        <ActivityIndicator color={colors.primary} style={styles.loader} />
       ) : error ? (
         <Text style={styles.error}>{error}</Text>
       ) : (
@@ -302,7 +303,7 @@ function TeacherTab({ active, onSelect }: SubjectTabProps) {
                   </Text>
                 </View>
                 {isActive ? (
-                  <Ionicons name="checkmark" size={18} color="#0055A5" />
+                  <Ionicons name="checkmark" size={18} color={colors.primary} />
                 ) : null}
               </Pressable>
             );
@@ -405,7 +406,7 @@ function RoomTab({ active, onSelect }: SubjectTabProps) {
             accessibilityLabel="Все корпуса"
             style={styles.back}
           >
-            <Ionicons name="chevron-back" size={18} color="#0055A5" />
+            <Ionicons name="chevron-back" size={18} color={colors.primary} />
             <Text style={styles.backText}>Все корпуса</Text>
           </Pressable>
           <Text style={styles.buildingTitle} numberOfLines={1}>
@@ -417,14 +418,14 @@ function RoomTab({ active, onSelect }: SubjectTabProps) {
           value={query}
           onChangeText={setQuery}
           placeholder="Поиск аудитории"
-          placeholderTextColor="#999"
+          placeholderTextColor={colors.textMuted}
           autoCapitalize="none"
           autoCorrect={false}
           style={styles.input}
         />
 
         {loading ? (
-          <ActivityIndicator color="#0055A5" style={styles.loader} />
+          <ActivityIndicator color={colors.primary} style={styles.loader} />
         ) : error ? (
           <Text style={styles.error}>{error}</Text>
         ) : (
@@ -457,7 +458,7 @@ function RoomTab({ active, onSelect }: SubjectTabProps) {
                     ) : null}
                   </View>
                   {isActive ? (
-                    <Ionicons name="checkmark" size={18} color="#0055A5" />
+                    <Ionicons name="checkmark" size={18} color={colors.primary} />
                   ) : null}
                 </Pressable>
               );
@@ -471,7 +472,7 @@ function RoomTab({ active, onSelect }: SubjectTabProps) {
   return (
     <View style={styles.tabBody}>
       {loading ? (
-        <ActivityIndicator color="#0055A5" style={styles.loader} />
+        <ActivityIndicator color={colors.primary} style={styles.loader} />
       ) : error ? (
         <Text style={styles.error}>{error}</Text>
       ) : (
@@ -493,7 +494,7 @@ function RoomTab({ active, onSelect }: SubjectTabProps) {
                   {buildingLabel(item)}
                 </Text>
               </View>
-              <Ionicons name="chevron-forward" size={18} color="#C4C4C4" />
+              <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
             </Pressable>
           )}
         />
@@ -510,15 +511,23 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: "rgba(0,0,0,0.45)",
+    backgroundColor: colors.overlay,
   },
   sheet: {
     height: "82%",
-    backgroundColor: "white",
+    backgroundColor: colors.surface,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     paddingHorizontal: 16,
     paddingTop: 16,
+  },
+  handle: {
+    alignSelf: "center",
+    width: 36,
+    height: 4,
+    borderRadius: 999,
+    backgroundColor: colors.border,
+    marginBottom: spacing.sm,
   },
   sheetHeader: {
     flexDirection: "row",
@@ -526,11 +535,11 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   sheetTitleWrap: { flex: 1, paddingRight: 12 },
-  sheetTitle: { fontSize: 13, color: "#888" },
+  sheetTitle: { fontSize: 13, color: colors.textMuted },
   sheetCurrent: {
     fontSize: 18,
     fontWeight: "700",
-    color: "#333",
+    color: colors.text,
     marginTop: 2,
   },
   close: {
@@ -541,7 +550,7 @@ const styles = StyleSheet.create({
   },
   tabs: {
     flexDirection: "row",
-    backgroundColor: "#F0F2F5",
+    backgroundColor: colors.surfaceMuted,
     borderRadius: 10,
     padding: 3,
   },
@@ -551,29 +560,29 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     alignItems: "center",
   },
-  tabActive: { backgroundColor: "white" },
-  tabText: { fontSize: 12, color: "#666", fontWeight: "600" },
-  tabTextActive: { color: "#0055A5" },
+  tabActive: { backgroundColor: colors.surface },
+  tabText: { fontSize: 12, color: colors.textSecondary, fontWeight: "600" },
+  tabTextActive: { color: colors.primary },
   content: { flex: 1, paddingTop: 12 },
   tabBody: { flex: 1 },
   input: {
     borderWidth: 1,
-    borderColor: "#DDD",
+    borderColor: colors.border,
     borderRadius: 10,
     paddingHorizontal: 12,
     paddingVertical: 10,
     fontSize: 15,
-    color: "#333",
+    color: colors.text,
   },
   hint: {
-    color: "#888",
+    color: colors.textMuted,
     fontSize: 13,
     marginTop: 12,
     textAlign: "center",
   },
   loader: { marginTop: 24, alignSelf: "center" },
   error: {
-    color: "#B00020",
+    color: colors.danger,
     fontSize: 13,
     marginTop: 12,
     textAlign: "center",
@@ -585,11 +594,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: "#EEE",
+    borderBottomColor: colors.borderLight,
   },
   rowText: { flex: 1, paddingRight: 8 },
-  rowTitle: { fontSize: 15, color: "#333" },
-  rowSubtitle: { fontSize: 12, color: "#888", marginTop: 2 },
+  rowTitle: { fontSize: 15, color: colors.text },
+  rowSubtitle: { fontSize: 12, color: colors.textMuted, marginTop: 2 },
   pressed: { opacity: 0.7 },
   empty: {
     flex: 1,
@@ -600,12 +609,12 @@ const styles = StyleSheet.create({
   emptyTitle: {
     fontSize: 16,
     fontWeight: "600",
-    color: "#333",
+    color: colors.text,
     marginBottom: 6,
   },
-  emptyText: { fontSize: 13, color: "#888", textAlign: "center" },
+  emptyText: { fontSize: 13, color: colors.textMuted, textAlign: "center" },
   primaryButton: {
-    backgroundColor: "#0055A5",
+    backgroundColor: colors.primary,
     borderRadius: 22,
     paddingVertical: 12,
     paddingHorizontal: spacing.xl + spacing.xs,
@@ -614,22 +623,22 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginTop: 20,
   },
-  primaryText: { color: "white", fontSize: 15, fontWeight: "600" },
+  primaryText: { color: colors.onPrimary, fontSize: 15, fontWeight: "600" },
   secondaryButton: {
     paddingVertical: 12,
     alignItems: "center",
     marginTop: 4,
   },
-  secondaryText: { color: "#0055A5", fontSize: 14, fontWeight: "600" },
+  secondaryText: { color: colors.primary, fontSize: 14, fontWeight: "600" },
   groupName: {
     fontSize: 22,
     fontWeight: "700",
-    color: "#333",
+    color: colors.text,
     marginTop: 8,
   },
   groupSpeciality: {
     fontSize: 13,
-    color: "#777",
+    color: colors.textSecondary,
     marginTop: 6,
     lineHeight: 18,
   },
@@ -640,11 +649,11 @@ const styles = StyleSheet.create({
     alignSelf: "flex-start",
     paddingVertical: 4,
   },
-  backText: { color: "#0055A5", fontSize: 13, fontWeight: "600" },
+  backText: { color: colors.primary, fontSize: 13, fontWeight: "600" },
   buildingTitle: {
     fontSize: 18,
     fontWeight: "700",
-    color: "#333",
+    color: colors.text,
     marginTop: 2,
     marginBottom: 8,
   },

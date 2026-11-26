@@ -1,4 +1,5 @@
 // src/components/schedule/DayPage.tsx
+import { Ionicons } from "@expo/vector-icons";
 import {
   RefreshControl,
   ScrollView,
@@ -6,9 +7,9 @@ import {
   Text,
   View,
 } from "react-native";
-import { Lesson } from "../../api/types";
+import type { Lesson } from "../../api/types";
 import { formatUpdateTime } from "../../constants/schedule";
-import { colors, spacing } from "../../constants/theme";
+import { colors, spacing, typography } from "../../constants/theme";
 import type { ScheduleSubjectKind } from "../../types/schedule";
 import { LessonCard } from "./LessonCard";
 
@@ -47,7 +48,17 @@ export function DayPage({
         }
       >
         {lessons.length === 0 ? (
-          <Text style={styles.emptyText}>Занятий нет</Text>
+          <View style={styles.empty}>
+            <Ionicons
+              name="calendar-outline"
+              size={34}
+              color={colors.textMuted}
+            />
+            <Text style={styles.emptyTitle}>В этот день занятий нет</Text>
+            <Text style={styles.emptyHint}>
+              Выберите другой день или обновите расписание
+            </Text>
+          </View>
         ) : (
           lessons.map((item, index) => (
             // index в ключе — fallback: в Lesson нет гарантированного id,
@@ -79,15 +90,28 @@ const styles = StyleSheet.create({
   scroll: { flex: 1 },
   scrollContent: { paddingBottom: spacing.lg },
   emptyContent: { flexGrow: 1, justifyContent: "center" },
-  emptyText: {
+  empty: {
+    alignItems: "center",
+    paddingHorizontal: spacing.xl,
+  },
+  emptyTitle: {
+    ...typography.bodyStrong,
+    color: colors.text,
+    marginTop: spacing.sm,
     textAlign: "center",
+  },
+  emptyHint: {
+    ...typography.caption,
     color: colors.textMuted,
-    fontSize: 14,
+    marginTop: spacing.xs,
+    textAlign: "center",
+    maxWidth: 260,
   },
   updated: {
-    textAlign: "center",
+    ...typography.micro,
     color: colors.textMuted,
-    fontSize: 11,
+    fontWeight: "400",
+    textAlign: "center",
     marginTop: spacing.sm,
     marginBottom: spacing.sm,
   },

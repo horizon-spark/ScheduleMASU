@@ -1,6 +1,13 @@
 // src/components/profile/InfoCard.tsx
-import { ReactNode } from "react";
+import type { ReactNode } from "react";
 import { StyleSheet, Text, View } from "react-native";
+import {
+  colors,
+  radii,
+  shadows,
+  spacing,
+  typography,
+} from "../../constants/theme";
 
 type Props = {
   title: string;
@@ -31,14 +38,34 @@ export function Divider() {
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: "white",
-    borderRadius: 15,
-    padding: 20,
-    marginBottom: 20,
+    backgroundColor: colors.surface,
+    borderRadius: radii.lg,
+    borderWidth: 1,
+    borderColor: colors.borderLight,
+    padding: spacing.lg,
+    marginBottom: spacing.lg,
+    ...shadows.card,
   },
-  title: { fontSize: 18, fontWeight: "bold", marginBottom: 15 },
-  row: { marginVertical: 5 },
-  label: { fontSize: 14, color: "#666", marginBottom: 3 },
-  value: { fontSize: 16, color: "#333", fontWeight: "500" },
-  divider: { height: 1, backgroundColor: "#EEE", marginVertical: 10 },
+  title: {
+    ...typography.captionStrong,
+    color: colors.textSecondary,
+    textTransform: "uppercase",
+    letterSpacing: 0.6,
+    marginBottom: spacing.sm,
+  },
+  row: { marginVertical: spacing.xs },
+  label: {
+    ...typography.caption,
+    color: colors.textMuted,
+    marginBottom: 2,
+  },
+  value: {
+    ...typography.bodyStrong,
+    color: colors.text,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: colors.borderLight,
+    marginVertical: spacing.sm,
+  },
 });

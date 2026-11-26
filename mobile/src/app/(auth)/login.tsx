@@ -258,7 +258,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "flex-start",
     gap: spacing.sm,
-    backgroundColor: "#FDECEE",
+    backgroundColor: colors.dangerSoft,
     borderRadius: radii.md,
     padding: spacing.md,
     marginTop: spacing.md,

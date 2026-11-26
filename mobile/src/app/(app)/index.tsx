@@ -1,21 +1,21 @@
 // src/app/(app)/index.tsx
+import { Ionicons } from "@expo/vector-icons";
 import { useMemo, useRef, useState } from "react";
-import {
-  ActivityIndicator,
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 import PagerView from "react-native-pager-view";
 import { DayPage } from "../../components/schedule/DayPage";
 import { DayTabs } from "../../components/schedule/DayTabs";
 import { PeriodPickerModal } from "../../components/schedule/PeriodPickerModal";
 import { ScheduleHeader } from "../../components/schedule/ScheduleHeader";
+import { ScheduleSkeleton } from "../../components/schedule/ScheduleSkeleton";
 import { SubjectPickerModal } from "../../components/schedule/SubjectPickerModal";
 import { WeekSwitcher } from "../../components/schedule/WeekSwitcher";
-import { DAYS_RU, WEEKDAYS_COUNT } from "../../constants/schedule";
-import { colors, radii, spacing } from "../../constants/theme";
+import {
+  DAYS_RU,
+  formatUpdateTime,
+  WEEKDAYS_COUNT,
+} from "../../constants/schedule";
+import { colors, radii, spacing, typography } from "../../constants/theme";
 import { useSchedule } from "../../hooks/useSchedule";
 
 export default function ScheduleScreen() {
@@ -60,7 +60,7 @@ export default function ScheduleScreen() {
     return (
       <View style={styles.container}>
         <ScheduleHeader />
-        <ActivityIndicator size="large" color={colors.primary} style={{ flex: 1 }} />
+        <ScheduleSkeleton />
       </View>
     );
   }
@@ -86,8 +86,16 @@ export default function ScheduleScreen() {
 
           {error && schedule.length > 0 ? (
             <View style={styles.banner}>
+              <Ionicons
+                name="cloud-offline-outline"
+                size={15}
+                color={colors.warningText}
+              />
               <Text style={styles.bannerText}>
-                Нет связи — показаны сохранённые данные
+                Нет связи.{" "}
+                {update
+                  ? `Данные на ${formatUpdateTime(update)}`
+                  : "Показаны сохранённые данные"}
               </Text>
             </View>
           ) : null}
@@ -112,13 +120,19 @@ export default function ScheduleScreen() {
             </PagerView>
 
             {isWeekLoading || (isRefreshing && schedule.length === 0) ? (
-              <View style={styles.overlay}>
-                <ActivityIndicator size="large" color={colors.primary} />
+              <View style={styles.loadingOverlay}>
+                <ScheduleSkeleton />
               </View>
             ) : null}
 
             {!isWeekLoading && !isRefreshing && error && schedule.length === 0 ? (
               <View style={styles.overlay}>
+                <Ionicons
+                  name="cloud-offline-outline"
+                  size={38}
+                  color={colors.textMuted}
+                />
+                <Text style={styles.errorTitle}>Не удалось загрузить</Text>
                 <Text style={styles.errorText}>{error}</Text>
                 <Pressable
                   onPress={refresh}
@@ -135,6 +149,14 @@ export default function ScheduleScreen() {
         </>
       ) : (
         <View style={styles.emptyContainer}>
+          <View style={styles.emptyIcon}>
+            <Ionicons
+              name="calendar-outline"
+              size={38}
+              color={colors.primary}
+            />
+          </View>
+          <Text style={styles.emptyTitle}>Расписание пока не выбрано</Text>
           <Text style={styles.emptyText}>
             Выберите группу, преподавателя или аудиторию
           </Text>
@@ -186,10 +208,26 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingHorizontal: spacing.xl,
   },
+  emptyIcon: {
+    width: 76,
+    height: 76,
+    borderRadius: 38,
+    backgroundColor: colors.primarySoft,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: spacing.md,
+  },
+  emptyTitle: {
+    ...typography.headline,
+    color: colors.text,
+    textAlign: "center",
+  },
   emptyText: {
+    ...typography.caption,
     textAlign: "center",
     color: colors.textMuted,
-    fontSize: 14,
+    marginTop: spacing.xs,
+    maxWidth: 280,
   },
   chooseButton: {
     marginTop: spacing.lg,
@@ -197,14 +235,27 @@ const styles = StyleSheet.create({
     borderRadius: radii.pill,
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.xl,
+    minHeight: 44,
+    justifyContent: "center",
   },
-  chooseText: { color: colors.onPrimary, fontWeight: "600", fontSize: 15 },
+  chooseText: {
+    ...typography.bodyStrong,
+    color: colors.onPrimary,
+  },
   banner: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: spacing.xs,
     backgroundColor: colors.warningBackground,
-    paddingVertical: 6,
+    paddingVertical: spacing.sm,
     paddingHorizontal: spacing.md,
   },
-  bannerText: { color: colors.warningText, fontSize: 12, textAlign: "center" },
+  bannerText: {
+    ...typography.caption,
+    color: colors.warningText,
+    flexShrink: 1,
+  },
   overlay: {
     position: "absolute",
     top: 0,
@@ -216,18 +267,38 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     padding: spacing.xl,
   },
+  loadingOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: colors.background,
+    paddingTop: spacing.sm,
+  },
+  errorTitle: {
+    ...typography.headline,
+    color: colors.text,
+    marginTop: spacing.md,
+  },
   errorText: {
+    ...typography.caption,
     color: colors.textSecondary,
-    fontSize: 14,
     textAlign: "center",
-    marginBottom: spacing.md,
+    marginTop: spacing.xs,
+    marginBottom: spacing.lg,
   },
   retryButton: {
     backgroundColor: colors.primary,
     borderRadius: radii.pill,
-    paddingVertical: 10,
+    paddingVertical: spacing.md,
     paddingHorizontal: spacing.xl,
+    minHeight: 44,
+    justifyContent: "center",
   },
   pressed: { opacity: 0.7 },
-  retryText: { color: colors.onPrimary, fontWeight: "600", fontSize: 14 },
+  retryText: {
+    ...typography.bodyStrong,
+    color: colors.onPrimary,
+  },
 });

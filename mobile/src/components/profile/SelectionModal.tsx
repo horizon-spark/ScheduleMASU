@@ -1,12 +1,21 @@
 // src/components/profile/SelectionModal.tsx
+import { Ionicons } from "@expo/vector-icons";
 import {
   FlatList,
   Modal,
+  Pressable,
   StyleSheet,
   Text,
-  TouchableOpacity,
   View,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import {
+  colors,
+  radii,
+  shadows,
+  spacing,
+  typography,
+} from "../../constants/theme";
 
 type Props<T> = {
   visible: boolean;
@@ -27,6 +36,8 @@ export function SelectionModal<T>({
   onSelect,
   onClose,
 }: Props<T>) {
+  const insets = useSafeAreaInsets();
+
   return (
     <Modal
       visible={visible}
@@ -35,23 +46,58 @@ export function SelectionModal<T>({
       onRequestClose={onClose}
     >
       <View style={styles.overlay}>
-        <View style={styles.content}>
-          <Text style={styles.title}>{title}</Text>
+        <Pressable style={styles.backdrop} onPress={onClose} />
+
+        <View
+          style={[styles.sheet, { paddingBottom: insets.bottom + spacing.md }]}
+        >
+          <View style={styles.handle} />
+
+          <View style={styles.header}>
+            <Text style={styles.title}>{title}</Text>
+            <Pressable
+              onPress={onClose}
+              hitSlop={10}
+              accessibilityRole="button"
+              accessibilityLabel="Закрыть"
+              style={({ pressed }) => [
+                styles.close,
+                pressed && styles.pressed,
+              ]}
+            >
+              <Ionicons name="close" size={22} color={colors.text} />
+            </Pressable>
+          </View>
+
           <FlatList
             data={data}
             keyExtractor={keyExtractor}
+            keyboardShouldPersistTaps="handled"
+            style={styles.list}
+            contentContainerStyle={styles.listContent}
+            ListEmptyComponent={
+              <Text style={styles.emptyText}>Список пуст</Text>
+            }
             renderItem={({ item }) => (
-              <TouchableOpacity
-                style={styles.item}
+              <Pressable
+                style={({ pressed }) => [
+                  styles.item,
+                  pressed && styles.pressed,
+                ]}
                 onPress={() => onSelect(item)}
+                accessibilityRole="button"
               >
-                <Text style={styles.itemText}>{renderLabel(item)}</Text>
-              </TouchableOpacity>
+                <Text style={styles.itemText} numberOfLines={2}>
+                  {renderLabel(item)}
+                </Text>
+                <Ionicons
+                  name="chevron-forward"
+                  size={18}
+                  color={colors.textMuted}
+                />
+              </Pressable>
             )}
           />
-          <TouchableOpacity style={styles.close} onPress={onClose}>
-            <Text style={styles.closeText}>Закрыть</Text>
-          </TouchableOpacity>
         </View>
       </View>
     </Modal>
@@ -59,36 +105,69 @@ export function SelectionModal<T>({
 }
 
 const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.5)",
-    justifyContent: "center",
-    padding: 20,
+  overlay: { flex: 1, justifyContent: "flex-end" },
+  backdrop: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: colors.overlay,
   },
-  content: {
-    backgroundColor: "white",
-    borderRadius: 15,
-    maxHeight: "70%",
-    padding: 20,
+  sheet: {
+    maxHeight: "80%",
+    backgroundColor: colors.surface,
+    borderTopLeftRadius: radii.xl,
+    borderTopRightRadius: radii.xl,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.sm,
+    ...shadows.sheet,
+  },
+  handle: {
+    alignSelf: "center",
+    width: 36,
+    height: 4,
+    borderRadius: radii.pill,
+    backgroundColor: colors.border,
+    marginBottom: spacing.sm,
+  },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: spacing.sm,
   },
   title: {
-    fontSize: 18,
-    fontWeight: "bold",
-    marginBottom: 15,
-    textAlign: "center",
+    ...typography.headline,
+    flex: 1,
+    color: colors.text,
   },
-  item: {
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: "#EEE",
-  },
-  itemText: { fontSize: 16, color: "#333" },
   close: {
-    backgroundColor: "#0055A5",
-    padding: 15,
-    borderRadius: 25,
+    width: 36,
+    height: 36,
     alignItems: "center",
-    marginTop: 15,
+    justifyContent: "center",
   },
-  closeText: { color: "white", fontWeight: "bold", fontSize: 16 },
+  list: { flexShrink: 1 },
+  listContent: { paddingBottom: spacing.sm },
+  item: {
+    minHeight: 52,
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.borderLight,
+  },
+  itemText: {
+    ...typography.body,
+    flex: 1,
+    color: colors.text,
+    paddingRight: spacing.sm,
+  },
+  emptyText: {
+    ...typography.caption,
+    color: colors.textMuted,
+    textAlign: "center",
+    paddingVertical: spacing.xl,
+  },
+  pressed: { opacity: 0.7 },
 });

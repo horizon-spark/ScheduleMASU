@@ -60,6 +60,7 @@ export function PeriodPickerModal({
               { paddingBottom: insets.bottom + spacing.md },
             ]}
           >
+            <View style={styles.handle} />
             <View style={styles.header}>
               <View style={styles.headerText}>
                 <Text style={styles.title}>Выберите период</Text>
@@ -88,13 +89,14 @@ export function PeriodPickerModal({
                 accessibilityLabel="Закрыть"
                 style={styles.close}
               >
-                <Ionicons name="close" size={22} color="#333" />
+                <Ionicons name="close" size={22} color={colors.text} />
               </Pressable>
             </View>
 
             <FlatList
               data={weeks}
               keyExtractor={(week) => formatWeekRange(week)}
+              style={styles.list}
               initialScrollIndex={Math.max(0, selectedIndex - 2)}
               getItemLayout={(_, index) => ({
                 length: ROW_HEIGHT,
@@ -131,7 +133,7 @@ export function PeriodPickerModal({
                       </Text>
                     </View>
                     {selected ? (
-                      <Ionicons name="checkmark" size={20} color="#0055A5" />
+                      <Ionicons name="checkmark" size={20} color={colors.primary} />
                     ) : null}
                   </Pressable>
                 );
@@ -152,15 +154,23 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: "rgba(0,0,0,0.45)",
+    backgroundColor: colors.overlay,
   },
   sheet: {
     height: "72%",
-    backgroundColor: "white",
+    backgroundColor: colors.surface,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     paddingHorizontal: 16,
     paddingTop: 16,
+  },
+  handle: {
+    alignSelf: "center",
+    width: 36,
+    height: 4,
+    borderRadius: 999,
+    backgroundColor: colors.border,
+    marginBottom: spacing.sm,
   },
   header: {
     flexDirection: "row",
@@ -168,7 +178,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   headerText: { flex: 1, paddingRight: 12 },
-  title: { fontSize: 18, fontWeight: "700", color: "#333" },
+  title: { fontSize: 18, fontWeight: "700", color: colors.text },
   todayButton: {
     flexDirection: "row",
     alignItems: "center",
@@ -192,6 +202,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+  list: { flex: 1 },
   listContent: { paddingBottom: 16 },
   row: {
     height: ROW_HEIGHT,
@@ -200,11 +211,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     borderRadius: 12,
   },
-  rowSelected: { backgroundColor: "#EAF2FB" },
+  rowSelected: { backgroundColor: colors.primarySoft },
   rowText: { flex: 1, paddingRight: 8 },
-  range: { fontSize: 15, fontWeight: "600", color: "#333" },
-  rangeSelected: { color: "#0055A5" },
-  parity: { fontSize: 12, color: "#888", marginTop: 2 },
-  paritySelected: { color: "#0055A5" },
+  range: { fontSize: 15, fontWeight: "600", color: colors.text },
+  rangeSelected: { color: colors.primary },
+  parity: { fontSize: 12, color: colors.textMuted, marginTop: 2 },
+  paritySelected: { color: colors.primary },
   pressed: { opacity: 0.7 },
 });

@@ -1,10 +1,11 @@
 // src/components/profile/LogoutButton.tsx
 import {
-    ActivityIndicator,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
+  ActivityIndicator,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
 } from "react-native";
+import { colors, radii, spacing, typography } from "../../constants/theme";
 
 type Props = {
   onPress: () => void;
@@ -14,12 +15,13 @@ type Props = {
 export function LogoutButton({ onPress, loading }: Props) {
   return (
     <TouchableOpacity
-      style={[styles.button, loading && { opacity: 0.6 }]}
+      style={[styles.button, loading && styles.disabled]}
       onPress={onPress}
       disabled={loading}
+      accessibilityRole="button"
     >
       {loading ? (
-        <ActivityIndicator color="#fff" />
+        <ActivityIndicator color={colors.danger} />
       ) : (
         <Text style={styles.text}>Выйти</Text>
       )}
@@ -29,10 +31,20 @@ export function LogoutButton({ onPress, loading }: Props) {
 
 const styles = StyleSheet.create({
   button: {
-    backgroundColor: "#0055A5",
-    padding: 15,
-    borderRadius: 25,
+    minHeight: 48,
+    borderWidth: 1,
+    borderColor: colors.danger,
+    backgroundColor: colors.surface,
+    borderRadius: radii.pill,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.xl,
     alignItems: "center",
+    justifyContent: "center",
+    marginTop: spacing.sm,
   },
-  text: { color: "white", fontSize: 16, fontWeight: "bold" },
+  disabled: { opacity: 0.6 },
+  text: {
+    ...typography.bodyStrong,
+    color: colors.danger,
+  },
 });
