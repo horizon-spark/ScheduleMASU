@@ -32,8 +32,8 @@ export const colors = {
   // Текст
   text: "#1E1E1E",
   textSecondary: "#666666",
-  // Для мелкого текста используем чуть более тёмный, чем #999, серый.
-  textMuted: "#6B7280",
+  // Для мелкого текста используем серый с контрастом ≥ 4.5:1 на фоне #F2F5FA.
+  textMuted: "#5F6773",
 
   // Границы
   border: "#DDDDDD",
@@ -51,8 +51,10 @@ export const colors = {
 
   // Служебное
   onPrimary: "#FFFFFF",
-  onPrimaryMuted: "rgba(255,255,255,0.75)",
-  onPrimarySubtle: "rgba(255,255,255,0.85)",
+  // Полупрозрачный белый на #0064BE: 0.85 даёт контраст ~4.7:1,
+  // 0.92 — ~5.3:1. Более прозрачный текст не проходит AA для мелкого кегля.
+  onPrimaryMuted: "rgba(255,255,255,0.85)",
+  onPrimarySubtle: "rgba(255,255,255,0.92)",
   overlay: "rgba(15,23,42,0.45)",
 } as const;
 
@@ -83,6 +85,19 @@ export const typography = {
   captionStrong: { fontFamily: fonts.bodySemibold, fontSize: 13, lineHeight: 18 },
   micro: { fontFamily: fonts.bodySemibold, fontSize: 11, lineHeight: 15 },
 } as const;
+
+/**
+ * Ограничение системного масштаба шрифта для компактных элементов:
+ * фиксированных высот, tab bar, кружков дней и строк списков. Без него
+ * при «крупном шрифте» Android текст обрезается внутри фиксированных
+ * контейнеров. Обычный текст экранов масштабируется без ограничений.
+ */
+export const fontScaleCaps = {
+  compact: 1.2,
+  text: 1.4,
+} as const;
+
+export const minTouchTarget = 44;
 
 export const shadows = {
   card: {

@@ -79,6 +79,7 @@ export function useSchedule(pagerRef: PagerRef) {
   const isFocusedRef = useRef(false);
   const requestSeq = useRef(0);
   const inFlightCountRef = useRef(0);
+  const isRefreshInFlightRef = useRef(false);
   const wasOfflineRef = useRef(isOffline);
 
   useEffect(() => {
@@ -131,6 +132,9 @@ export function useSchedule(pagerRef: PagerRef) {
           finishInitialLoading();
 
           if (isScheduleCacheFresh(cached)) {
+            // Кеш свежий — запрос не нужен. Ошибка могла остаться от
+            // предыдущей неудачной попытки и больше не актуальна.
+            setError(null);
             return;
           }
         }
@@ -396,9 +400,13 @@ export function useSchedule(pagerRef: PagerRef) {
 
   const refresh = useCallback(() => {
     const current = subjectRef.current;
-    if (!current) return;
+    if (!current || isRefreshInFlightRef.current) return;
+
+    isRefreshInFlightRef.current = true;
     setIsRefreshing(true);
-    loadWeek(current, weekStartRef.current, { force: true });
+    void loadWeek(current, weekStartRef.current, { force: true }).finally(() => {
+      isRefreshInFlightRef.current = false;
+    });
   }, [loadWeek]);
 
   return {

@@ -16,7 +16,13 @@ import {
   formatUpdateTime,
   WEEKDAYS_COUNT,
 } from "../../constants/schedule";
-import { colors, radii, spacing, typography } from "../../constants/theme";
+import {
+  colors,
+  fontScaleCaps,
+  radii,
+  spacing,
+  typography,
+} from "../../constants/theme";
 import { useSchedule } from "../../hooks/useSchedule";
 
 export default function ScheduleScreen() {
@@ -87,8 +93,12 @@ export default function ScheduleScreen() {
             onSelect={(i) => pagerRef.current?.setPage(i)}
           />
 
-          {(error || isStale) && schedule.length > 0 ? (
-            <View style={styles.banner}>
+          {(isStale || (error && schedule.length > 0)) && !isWeekLoading ? (
+            <View
+              style={styles.banner}
+              accessibilityRole="alert"
+              accessibilityLiveRegion="polite"
+            >
               <Ionicons
                 name={isStale ? "time-outline" : "cloud-offline-outline"}
                 size={15}
@@ -135,16 +145,28 @@ export default function ScheduleScreen() {
                   size={38}
                   color={colors.textMuted}
                 />
-                <Text style={styles.errorTitle}>Не удалось загрузить</Text>
+                <Text
+                  accessibilityRole="header"
+                  style={styles.errorTitle}
+                >
+                  Не удалось загрузить
+                </Text>
                 <Text style={styles.errorText}>{error}</Text>
                 <Pressable
                   onPress={refresh}
+                  accessibilityRole="button"
+                  accessibilityLabel="Повторить загрузку расписания"
                   style={({ pressed }) => [
                     styles.retryButton,
                     pressed && styles.pressed,
                   ]}
                 >
-                  <Text style={styles.retryText}>Повторить</Text>
+                  <Text
+                    maxFontSizeMultiplier={fontScaleCaps.text}
+                    style={styles.retryText}
+                  >
+                    Повторить
+                  </Text>
                 </Pressable>
               </View>
             ) : null}

@@ -54,8 +54,25 @@ export function LessonCard({ item, subjectKind }: Props) {
     ? getTypeTone(item.type)
     : { background: colors.surfaceMuted, foreground: colors.primary };
 
+  // Одна карточка — один элемент для скринридера: иначе VoiceOver/TalkBack
+  // читают время, дисциплину и аудиторию как разрозненные блоки.
+  const accessibilityLabel = [
+    end ? `${start}–${end}` : start,
+    item.disciplines,
+    item.type,
+    subjectKind !== "room" && item.room ? `аудитория ${item.room}` : null,
+    subjectKind !== "teacher" && item.teacher ? item.teacher : null,
+    subGroups.length > 0
+      ? `${subjectKind === "group" ? "Подгруппы" : "Группы"}: ${subGroups.join(
+          ", ",
+        )}`
+      : null,
+  ]
+    .filter((part): part is string => Boolean(part))
+    .join(", ");
+
   return (
-    <View style={styles.row}>
+    <View style={styles.row} accessible accessibilityLabel={accessibilityLabel}>
       <View style={styles.timeColumn}>
         <Text style={styles.startTime}>{start}</Text>
         {end ? <Text style={styles.endTime}>{end}</Text> : null}

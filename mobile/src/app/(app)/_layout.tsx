@@ -1,9 +1,13 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Tabs } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { View, type ColorValue } from "react-native";
+import { StyleSheet, Text, View, type ColorValue } from "react-native";
 import { OfflineBanner } from "../../components/OfflineBanner";
-import { colors, typography } from "../../constants/theme";
+import {
+  colors,
+  fontScaleCaps,
+  typography,
+} from "../../constants/theme";
 
 /**
  * tabBarIcon отдаёт ColorValue (string | number | symbol | null),
@@ -28,11 +32,8 @@ export default function AppLayout() {
             backgroundColor: colors.surface,
             borderTopColor: colors.borderLight,
           },
-          tabBarLabelStyle: {
-            ...typography.micro,
-          },
           tabBarItemStyle: {
-            paddingVertical: 4,
+            paddingVertical: 2,
           },
         }}
       >
@@ -40,6 +41,16 @@ export default function AppLayout() {
           name="index"
           options={{
             title: "Расписание",
+            // Свой label вместо tabBarLabelStyle: нужен maxFontSizeMultiplier,
+            // иначе при крупном системном шрифте подпись обрезается в tab bar.
+            tabBarLabel: ({ color }) => (
+              <Text
+                maxFontSizeMultiplier={fontScaleCaps.compact}
+                style={[styles.tabLabel, { color }]}
+              >
+                Расписание
+              </Text>
+            ),
             tabBarIcon: ({ color, focused }) => (
               <Ionicons
                 name={focused ? "calendar" : "calendar-outline"}
@@ -53,6 +64,14 @@ export default function AppLayout() {
           name="profile"
           options={{
             title: "Профиль",
+            tabBarLabel: ({ color }) => (
+              <Text
+                maxFontSizeMultiplier={fontScaleCaps.compact}
+                style={[styles.tabLabel, { color }]}
+              >
+                Профиль
+              </Text>
+            ),
             tabBarIcon: ({ color, focused }) => (
               <Ionicons
                 name={focused ? "person" : "person-outline"}
@@ -84,3 +103,9 @@ export default function AppLayout() {
     </>
   );
 }
+
+const styles = StyleSheet.create({
+  tabLabel: {
+    ...typography.micro,
+  },
+});

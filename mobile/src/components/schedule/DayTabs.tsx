@@ -7,7 +7,14 @@ import {
   isSameDay,
   WEEKDAYS_COUNT,
 } from "../../constants/schedule";
-import { colors, fonts, radii, spacing } from "../../constants/theme";
+import {
+  colors,
+  fontScaleCaps,
+  fonts,
+  minTouchTarget,
+  radii,
+  spacing,
+} from "../../constants/theme";
 
 type Props = {
   weekStart: Date;
@@ -31,11 +38,14 @@ export function DayTabs({ weekStart, currentPage, onSelect }: Props) {
             key={label}
             onPress={() => onSelect(index)}
             accessibilityRole="button"
-            accessibilityLabel={`${DAYS_RU[index]}, ${date.getDate()}`}
+            accessibilityLabel={`${DAYS_RU[index]}, ${date.getDate()}${
+              isToday ? ", сегодня" : ""
+            }`}
             accessibilityState={{ selected }}
             style={({ pressed }) => [styles.tab, pressed && styles.pressed]}
           >
             <Text
+              maxFontSizeMultiplier={fontScaleCaps.compact}
               style={[
                 styles.weekday,
                 (selected || isToday) && styles.weekdaySelected,
@@ -51,6 +61,7 @@ export function DayTabs({ weekStart, currentPage, onSelect }: Props) {
               ]}
             >
               <Text
+                maxFontSizeMultiplier={fontScaleCaps.compact}
                 style={[
                   styles.dayNumber,
                   isToday && !selected && styles.dayNumberToday,
@@ -78,7 +89,9 @@ const styles = StyleSheet.create({
   },
   tab: {
     flex: 1,
+    minHeight: minTouchTarget,
     alignItems: "center",
+    justifyContent: "center",
     paddingVertical: 2,
     borderRadius: radii.md,
     overflow: "hidden",
@@ -87,6 +100,7 @@ const styles = StyleSheet.create({
   weekday: {
     fontFamily: fonts.bodySemibold,
     fontSize: 11,
+    lineHeight: 14,
     color: colors.textMuted,
   },
   weekdaySelected: { color: colors.primary },
@@ -104,6 +118,7 @@ const styles = StyleSheet.create({
   dayNumber: {
     fontFamily: fonts.heading,
     fontSize: 15,
+    lineHeight: 18,
     color: colors.text,
   },
   dayNumberToday: { color: colors.primary },

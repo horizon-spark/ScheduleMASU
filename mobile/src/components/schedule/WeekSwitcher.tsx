@@ -2,7 +2,12 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { formatWeekRange, getWeekParity } from "../../constants/schedule";
-import { colors, fonts, spacing } from "../../constants/theme";
+import {
+  colors,
+  fontScaleCaps,
+  fonts,
+  spacing,
+} from "../../constants/theme";
 
 type Props = {
   start: Date;
@@ -34,13 +39,17 @@ export function WeekSwitcher({
           onPress={onPressRange}
           hitSlop={6}
           accessibilityRole="button"
-          accessibilityLabel="Выбрать период"
+          accessibilityLabel={`Выбрать период, ${formatWeekRange(start)}`}
           style={({ pressed }) => [
             styles.rangeButton,
             pressed && styles.pressed,
           ]}
         >
-          <Text style={styles.range} numberOfLines={1}>
+          <Text
+            maxFontSizeMultiplier={fontScaleCaps.compact}
+            style={styles.range}
+            numberOfLines={1}
+          >
             {formatWeekRange(start)} · {getWeekParity(start)}
           </Text>
           <Ionicons

@@ -123,6 +123,29 @@ src/app/
 - Иконка/adaptive icon/splash/favicon пересобраны из официального SVG.
 - `app.json`: iOS icon теперь `./assets/images/icon.png`.
 
+### Доступность и адаптивность
+
+QA-полировка 2026-11-27:
+
+- `constants/theme.ts`: `fontScaleCaps` для компактных элементов с фиксированной
+  высотой (tab bar, дни недели, строки модалок) — крупный системный шрифт
+  больше не обрезает текст; обычный текст экранов масштабируется свободно.
+- Контраст: `textMuted` затемнён до `#5F6773` (≥ 4.5:1 на фоне), полупрозрачный
+  текст на синем заголовке усилен до 0.85/0.92.
+- Tab bar: свои `tabBarLabel` с ограничением масштаба; иконки и подписи не
+  разъезжаются при крупном шрифте.
+- Safe area: setup получил нижний inset, about/setup имеют безопасный fallback
+  для «Назад» (`router.canGoBack()`), брендовые плашки не выходят за экран на
+  узких устройствах.
+- Модалки: `statusBarTranslucent` + `navigationBarTranslucent`, прокрутка в
+  карточке группы, тексты и touch-targets приведены к 44 pt.
+- Доступность: озвучены строки настроек, выход, кнопки повтора, карточка
+  занятия читается одним блоком, skeleton помечен как `progressbar`,
+  error/stale/offline-баннеры анонсируются (`accessibilityLiveRegion`).
+- Надёжность: защита от гонок при быстром переключении факультета/курса,
+  повторный pull-to-refresh не дублируется, ошибка сбрасывается при переходе
+  на свежий кеш.
+
 ### Тесты
 
 ```bash
@@ -133,7 +156,8 @@ npm run lint             # expo lint
 ```
 
 Тесты покрывают нормализацию, даты/семестры, ошибки запросов, retry и cache
-policy.
+policy. Web-экспорт после QA-правок проходит:
+`EXPO_PUBLIC_API_BASE_URL=https://example.com/api npx expo export --platform web`.
 
 ---
 
@@ -264,6 +288,9 @@ systemctl list-timers schedulemasu-deploy.timer
 
 ## 6. Последние важные изменения
 
+- 2026-11-27 — QA-полировка mobile: масштаб шрифтов и tab bar, safe area,
+  контраст, accessibility-подписи, модалки edge-to-edge, защита от гонок в
+  выборе группы.
 - `720e544` — stale-if-error на API + stale-баннер в мобильном клиенте.
 - `49c3e58` — первый запуск/мастер настройки группы + offline-баннер и
   ревалидация при восстановлении сети.
@@ -296,7 +323,9 @@ systemctl list-timers schedulemasu-deploy.timer
 - Добавить в CI `expo-doctor`, smoke-test Docker-образа, `trivy`, `gitleaks`,
   Dependabot.
 - QA на Android-устройстве: маленький экран, крупный шрифт, safe area, tab bar,
-  splash/icon, retry/offline, refresh-токены.
+  splash/icon, retry/offline, refresh-токены. Код-левел правки под крупный
+  шрифт/доступность сделаны 2026-11-27, но требуют проверки на реальном
+  устройстве (особенно TalkBack и жестовая навигация).
 - Подготовить политику конфиденциальности и контакты поддержки.
 - Заменить шаблонную `mobile/LICENSE` (Expo MIT) на решение вуза.
 - Убрать/проверить неиспользуемые `assets/expo.icon`.

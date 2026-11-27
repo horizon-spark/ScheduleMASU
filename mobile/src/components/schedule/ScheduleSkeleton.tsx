@@ -5,7 +5,13 @@ const SKELETON_ROWS = [0, 1, 2, 3];
 
 export function ScheduleSkeleton() {
   return (
-    <View style={styles.container} accessibilityLabel="Загрузка расписания">
+    <View
+      style={styles.container}
+      accessible
+      accessibilityRole="progressbar"
+      accessibilityLabel="Загрузка расписания"
+      accessibilityState={{ busy: true }}
+    >
       {SKELETON_ROWS.map((row) => (
         <View key={row} style={styles.row}>
           <View style={styles.time}>

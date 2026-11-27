@@ -206,6 +206,7 @@ const styles = StyleSheet.create({
   hero: { alignItems: "center", marginBottom: spacing.xl },
   brandPlate: {
     width: 264,
+    maxWidth: "100%",
     alignItems: "center",
     backgroundColor: colors.surface,
     borderRadius: radii.lg,
@@ -217,7 +218,8 @@ const styles = StyleSheet.create({
   },
   brandLogo: {
     width: 240,
-    height: 49,
+    maxWidth: "100%",
+    aspectRatio: 240 / 49,
   },
   title: {
     fontFamily: fonts.heading,

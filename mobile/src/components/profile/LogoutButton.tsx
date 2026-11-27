@@ -5,7 +5,13 @@ import {
   Text,
   TouchableOpacity,
 } from "react-native";
-import { colors, radii, spacing, typography } from "../../constants/theme";
+import {
+  colors,
+  fontScaleCaps,
+  radii,
+  spacing,
+  typography,
+} from "../../constants/theme";
 
 type Props = {
   onPress: () => void;
@@ -19,11 +25,18 @@ export function LogoutButton({ onPress, loading }: Props) {
       onPress={onPress}
       disabled={loading}
       accessibilityRole="button"
+      accessibilityLabel="Выйти из учётной записи"
+      accessibilityState={{ disabled: loading === true, busy: loading === true }}
     >
       {loading ? (
         <ActivityIndicator color={colors.danger} />
       ) : (
-        <Text style={styles.text}>Выйти</Text>
+        <Text
+          maxFontSizeMultiplier={fontScaleCaps.text}
+          style={styles.text}
+        >
+          Выйти
+        </Text>
       )}
     </TouchableOpacity>
   );

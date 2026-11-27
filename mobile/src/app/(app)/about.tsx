@@ -36,12 +36,20 @@ export default function AboutScreen() {
     void Linking.openURL(`mailto:${SUPPORT_EMAIL}`).catch(() => {});
   };
 
+  const goBack = () => {
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace("/profile");
+    }
+  };
+
   return (
     <View style={styles.container}>
       <StatusBar style="dark" />
       <View style={[styles.header, { paddingTop: insets.top + spacing.sm }]}>
         <Pressable
-          onPress={() => router.back()}
+          onPress={goBack}
           hitSlop={10}
           accessibilityRole="button"
           accessibilityLabel="Назад"
@@ -140,6 +148,7 @@ const styles = StyleSheet.create({
   hero: { alignItems: "center", marginVertical: spacing.lg },
   brandPlate: {
     width: 264,
+    maxWidth: "100%",
     alignItems: "center",
     backgroundColor: colors.surface,
     borderRadius: radii.lg,
@@ -151,7 +160,8 @@ const styles = StyleSheet.create({
   },
   brandLogo: {
     width: 240,
-    height: 49,
+    maxWidth: "100%",
+    aspectRatio: 240 / 49,
   },
   name: {
     fontFamily: fonts.heading,

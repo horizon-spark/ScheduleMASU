@@ -43,6 +43,8 @@ export function SelectionModal<T>({
       visible={visible}
       transparent
       animationType="slide"
+      statusBarTranslucent
+      navigationBarTranslucent
       onRequestClose={onClose}
     >
       <View style={styles.overlay}>
@@ -86,6 +88,7 @@ export function SelectionModal<T>({
                 ]}
                 onPress={() => onSelect(item)}
                 accessibilityRole="button"
+                accessibilityLabel={renderLabel(item)}
               >
                 <Text style={styles.itemText} numberOfLines={2}>
                   {renderLabel(item)}

@@ -3,6 +3,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { StyleSheet, Text, TouchableOpacity } from "react-native";
 import {
   colors,
+  fontScaleCaps,
   spacing,
   typography,
 } from "../../constants/theme";
@@ -28,9 +29,21 @@ export function SettingRow({
       onPress={onPress}
       disabled={disabled}
       accessibilityRole="button"
+      accessibilityLabel={`${label}: ${value}`}
+      accessibilityState={{ disabled: disabled === true }}
+      accessibilityHint="Открыть выбор"
     >
-      <Text style={styles.label}>{label}</Text>
-      <Text style={styles.value} numberOfLines={1}>
+      <Text
+        maxFontSizeMultiplier={fontScaleCaps.text}
+        style={styles.label}
+      >
+        {label}
+      </Text>
+      <Text
+        maxFontSizeMultiplier={fontScaleCaps.text}
+        style={styles.value}
+        numberOfLines={1}
+      >
         {value}
       </Text>
       <Ionicons name={iconName} size={18} color={colors.primary} />

@@ -46,10 +46,18 @@ export default function SetupScreen() {
 
   const goToSchedule = () => router.replace("/(app)");
 
+  const goBack = () => {
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace("/(app)");
+    }
+  };
+
   const header = (
     <View style={[styles.header, { paddingTop: insets.top + spacing.sm }]}>
       <Pressable
-        onPress={() => router.back()}
+        onPress={goBack}
         hitSlop={10}
         accessibilityRole="button"
         accessibilityLabel="Назад"
@@ -80,18 +88,28 @@ export default function SetupScreen() {
     <View style={styles.container}>
       {header}
 
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView
+        contentContainerStyle={[
+          styles.content,
+          { paddingBottom: insets.bottom + spacing.xxl },
+        ]}
+      >
         <Text style={styles.intro}>
           Чтобы показывать расписание, нужно выбрать факультет, курс и группу.
           Это можно изменить позже в профиле.
         </Text>
 
         {error ? (
-          <View style={styles.errorCard}>
+          <View
+            style={styles.errorCard}
+            accessibilityRole="alert"
+            accessibilityLiveRegion="polite"
+          >
             <Text style={styles.errorText}>{error}</Text>
             <Pressable
               onPress={() => void reload()}
               accessibilityRole="button"
+              accessibilityLabel="Повторить загрузку данных"
               style={({ pressed }) => [
                 styles.retryButton,
                 pressed && styles.pressed,
@@ -125,7 +143,10 @@ export default function SetupScreen() {
         </View>
 
         {selectedGroup ? (
-          <View style={styles.success}>
+          <View
+            style={styles.success}
+            accessibilityLiveRegion="polite"
+          >
             <Ionicons
               name="checkmark-circle"
               size={18}
@@ -229,7 +250,6 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: spacing.lg,
-    paddingBottom: spacing.xxl,
   },
   intro: {
     ...typography.body,

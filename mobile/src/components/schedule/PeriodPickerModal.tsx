@@ -17,7 +17,14 @@ import {
   getWeekParity,
   isSameDay,
 } from "../../constants/schedule";
-import { colors, fonts, radii, spacing } from "../../constants/theme";
+import {
+  colors,
+  fontScaleCaps,
+  fonts,
+  minTouchTarget,
+  radii,
+  spacing,
+} from "../../constants/theme";
 
 type Props = {
   visible: boolean;
@@ -48,6 +55,8 @@ export function PeriodPickerModal({
       visible={visible}
       transparent
       animationType="slide"
+      statusBarTranslucent
+      navigationBarTranslucent
       onRequestClose={onClose}
     >
       <View style={styles.overlay}>
@@ -63,7 +72,12 @@ export function PeriodPickerModal({
             <View style={styles.handle} />
             <View style={styles.header}>
               <View style={styles.headerText}>
-                <Text style={styles.title}>Выберите период</Text>
+                <Text
+                  maxFontSizeMultiplier={fontScaleCaps.compact}
+                  style={styles.title}
+                >
+                  Выберите период
+                </Text>
                 <Pressable
                   onPress={() => onSelect(currentWeek)}
                   hitSlop={6}
@@ -79,7 +93,12 @@ export function PeriodPickerModal({
                     size={16}
                     color={colors.primary}
                   />
-                  <Text style={styles.todayText}>Текущая неделя</Text>
+                  <Text
+                    maxFontSizeMultiplier={fontScaleCaps.compact}
+                    style={styles.todayText}
+                  >
+                    Текущая неделя
+                  </Text>
                 </Pressable>
               </View>
               <Pressable
@@ -119,11 +138,13 @@ export function PeriodPickerModal({
                   >
                     <View style={styles.rowText}>
                       <Text
+                        maxFontSizeMultiplier={fontScaleCaps.compact}
                         style={[styles.range, selected && styles.rangeSelected]}
                       >
                         {formatWeekRange(item)}
                       </Text>
                       <Text
+                        maxFontSizeMultiplier={fontScaleCaps.compact}
                         style={[
                           styles.parity,
                           selected && styles.paritySelected,
@@ -193,7 +214,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md + 2,
     borderRadius: radii.pill,
     backgroundColor: colors.primarySoft,
-    minHeight: 40,
+    minHeight: minTouchTarget,
   },
   todayText: {
     fontFamily: fonts.bodySemibold,

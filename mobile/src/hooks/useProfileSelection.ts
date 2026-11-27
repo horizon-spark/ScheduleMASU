@@ -30,7 +30,13 @@ export function useProfileSelection(onAfterSelect?: () => void) {
   const { isOffline } = useNetworkStatus();
   const wasOfflineRef = useRef(isOffline);
 
+  // Защита от гонок: пользователь может быстро менять факультет/курс,
+  // а восстановление сети запускает повторную загрузку поверх текущей.
+  const loadSeqRef = useRef(0);
+  const groupsSeqRef = useRef(0);
+
   const load = useCallback(async () => {
+    const seq = ++loadSeqRef.current;
     setIsInitialLoading(true);
     setError(null);
 
@@ -40,6 +46,7 @@ export function useProfileSelection(onAfterSelect?: () => void) {
         getFaculties(),
         getCourses(),
       ]);
+      if (seq !== loadSeqRef.current) return;
       setFaculties(facRes.courses);
       setCourses(courseRes.courses);
 
@@ -48,17 +55,25 @@ export function useProfileSelection(onAfterSelect?: () => void) {
         getSelectedCourse(),
         getSelectedGroup(),
       ]);
+      if (seq !== loadSeqRef.current) return;
       if (savedFaculty) setSelectedFaculty(savedFaculty);
       if (savedCourse) setSelectedCourse(savedCourse);
 
       let effectiveGroup = savedGroup as Group | null;
 
       if (savedFaculty && savedCourse) {
+        const groupsSeq = ++groupsSeqRef.current;
         try {
           const groupsRes = await getMainGroups(
             savedFaculty.fac_id,
             savedCourse.course_id,
           );
+          if (
+            seq !== loadSeqRef.current ||
+            groupsSeq !== groupsSeqRef.current
+          ) {
+            return;
+          }
           setGroups(groupsRes.groups);
 
           // Миграция со старого выбора подгруппы на основную группу
@@ -78,6 +93,12 @@ export function useProfileSelection(onAfterSelect?: () => void) {
             }
           }
         } catch (e) {
+          if (
+            seq !== loadSeqRef.current ||
+            groupsSeq !== groupsSeqRef.current
+          ) {
+            return;
+          }
           console.warn("[profile] groups preload failed", e);
           setError(
             describeRequestError(e, "Не удалось загрузить список групп"),
@@ -85,14 +106,17 @@ export function useProfileSelection(onAfterSelect?: () => void) {
         }
       }
 
-      if (effectiveGroup) setSelectedGroup(effectiveGroup);
+      if (seq === loadSeqRef.current && effectiveGroup) {
+        setSelectedGroup(effectiveGroup);
+      }
     } catch (e) {
+      if (seq !== loadSeqRef.current) return;
       console.warn("[profile] init failed", e);
       setError(
         describeRequestError(e, "Не удалось загрузить данные профиля"),
       );
     } finally {
-      setIsInitialLoading(false);
+      if (seq === loadSeqRef.current) setIsInitialLoading(false);
     }
   }, []);
 
@@ -113,17 +137,20 @@ export function useProfileSelection(onAfterSelect?: () => void) {
   }, [isOffline, load]);
 
   const loadGroups = async (facId: number, courseId: number) => {
+    const seq = ++groupsSeqRef.current;
     setIsLoading(true);
     setError(null);
 
     try {
       const res = await getMainGroups(facId, courseId);
+      if (seq !== groupsSeqRef.current) return;
       setGroups(res.groups);
     } catch (e) {
+      if (seq !== groupsSeqRef.current) return;
       console.warn("[profile] groups load failed", e);
       setError(describeRequestError(e, "Не удалось загрузить группы"));
     } finally {
-      setIsLoading(false);
+      if (seq === groupsSeqRef.current) setIsLoading(false);
     }
   };
 

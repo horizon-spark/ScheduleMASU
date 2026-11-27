@@ -2,7 +2,12 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Image, Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { colors, fonts, spacing } from "../../constants/theme";
+import {
+  colors,
+  fontScaleCaps,
+  fonts,
+  spacing,
+} from "../../constants/theme";
 import type { ScheduleSubject } from "../../types/schedule";
 
 type Props = {
@@ -33,18 +38,27 @@ export function ScheduleHeader({ subject, onPressSubject }: Props) {
             onPress={onPressSubject}
             disabled={!onPressSubject}
             accessibilityRole="button"
-            accessibilityLabel="Выбрать расписание"
+            accessibilityLabel={`Выбрать расписание. Сейчас: ${title}`}
+            accessibilityHint="Открывает выбор группы, преподавателя или аудитории"
             style={({ pressed }) => [
               styles.subject,
               pressed && styles.pressed,
             ]}
           >
             <View style={styles.text}>
-              <Text style={styles.title} numberOfLines={1}>
+              <Text
+                maxFontSizeMultiplier={fontScaleCaps.text}
+                style={styles.title}
+                numberOfLines={1}
+              >
                 {title}
               </Text>
               {subtitle ? (
-                <Text style={styles.subtitle} numberOfLines={1}>
+                <Text
+                  maxFontSizeMultiplier={fontScaleCaps.text}
+                  style={styles.subtitle}
+                  numberOfLines={1}
+                >
                   {subtitle}
                 </Text>
               ) : null}
@@ -58,7 +72,11 @@ export function ScheduleHeader({ subject, onPressSubject }: Props) {
             ) : null}
           </Pressable>
         ) : (
-          <Text style={[styles.title, styles.text]} numberOfLines={1}>
+          <Text
+            maxFontSizeMultiplier={fontScaleCaps.text}
+            style={[styles.title, styles.text]}
+            numberOfLines={1}
+          >
             Расписание
           </Text>
         )}

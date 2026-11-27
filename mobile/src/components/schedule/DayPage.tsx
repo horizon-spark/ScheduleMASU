@@ -62,6 +62,7 @@ export function DayPage({
             <Pressable
               onPress={onRefresh}
               accessibilityRole="button"
+              accessibilityLabel="Обновить расписание"
               style={({ pressed }) => [
                 styles.refreshButton,
                 pressed && styles.pressed,

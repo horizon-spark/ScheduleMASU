@@ -9,6 +9,7 @@ import {
   Modal,
   Platform,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -17,7 +18,14 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { getBuildings, getRooms, searchTeachers } from "../../api/schedule";
 import type { Building, Group, Room, Teacher } from "../../api/types";
-import { colors, fonts, radii, spacing } from "../../constants/theme";
+import {
+  colors,
+  fontScaleCaps,
+  fonts,
+  minTouchTarget,
+  radii,
+  spacing,
+} from "../../constants/theme";
 import type { ScheduleSubject } from "../../types/schedule";
 import { describeRequestError, getErrorSummary } from "../../utils/apiError";
 import {
@@ -66,6 +74,8 @@ export function SubjectPickerModal({
       visible={visible}
       transparent
       animationType="slide"
+      statusBarTranslucent
+      navigationBarTranslucent
       onRequestClose={onClose}
     >
       <KeyboardAvoidingView
@@ -99,9 +109,12 @@ export function SubjectPickerModal({
               <Pressable
                 key={item.key}
                 onPress={() => setTab(item.key)}
+                accessibilityRole="tab"
+                accessibilityState={{ selected: tab === item.key }}
                 style={[styles.tab, tab === item.key && styles.tabActive]}
               >
                 <Text
+                  maxFontSizeMultiplier={fontScaleCaps.compact}
                   style={[
                     styles.tabText,
                     tab === item.key && styles.tabTextActive,
@@ -158,12 +171,18 @@ function GroupTab({ group, active, onClose, onSelect }: GroupTabProps) {
         </Text>
         <Pressable
           onPress={goToProfile}
+          accessibilityRole="button"
           style={({ pressed }) => [
             styles.primaryButton,
             pressed && styles.pressed,
           ]}
         >
-          <Text style={styles.primaryText}>Перейти в профиль</Text>
+          <Text
+            maxFontSizeMultiplier={fontScaleCaps.text}
+            style={styles.primaryText}
+          >
+            Перейти в профиль
+          </Text>
         </Pressable>
       </View>
     );
@@ -172,28 +191,56 @@ function GroupTab({ group, active, onClose, onSelect }: GroupTabProps) {
   const isActive = active?.kind === "group" && active.uid === group.UID;
 
   return (
-    <View>
-      <Text style={styles.groupName}>{group.group}</Text>
+    <ScrollView
+      style={styles.tabBody}
+      contentContainerStyle={styles.groupTab}
+      keyboardShouldPersistTaps="handled"
+      showsVerticalScrollIndicator={false}
+    >
+      <Text
+        maxFontSizeMultiplier={fontScaleCaps.text}
+        style={styles.groupName}
+      >
+        {group.group}
+      </Text>
       {group.speciality ? (
-        <Text style={styles.groupSpeciality}>{group.speciality}</Text>
+        <Text
+          maxFontSizeMultiplier={fontScaleCaps.text}
+          style={styles.groupSpeciality}
+        >
+          {group.speciality}
+        </Text>
       ) : null}
 
       <Pressable
         onPress={() => onSelect(makeGroupSubject(group))}
+        accessibilityRole="button"
         style={({ pressed }) => [
           styles.primaryButton,
           pressed && styles.pressed,
         ]}
       >
-        <Text style={styles.primaryText}>
+        <Text
+          maxFontSizeMultiplier={fontScaleCaps.text}
+          style={styles.primaryText}
+        >
           {isActive ? "Показать расписание" : "Выбрать эту группу"}
         </Text>
       </Pressable>
 
-      <Pressable onPress={goToProfile} style={styles.secondaryButton}>
-        <Text style={styles.secondaryText}>Изменить группу в профиле</Text>
+      <Pressable
+        onPress={goToProfile}
+        accessibilityRole="button"
+        style={styles.secondaryButton}
+      >
+        <Text
+          maxFontSizeMultiplier={fontScaleCaps.text}
+          style={styles.secondaryText}
+        >
+          Изменить группу в профиле
+        </Text>
       </Pressable>
-    </View>
+    </ScrollView>
   );
 }
 
@@ -275,6 +322,8 @@ function TeacherTab({ active, onSelect }: SubjectTabProps) {
         autoCorrect={false}
         style={styles.input}
         returnKeyType="search"
+        maxFontSizeMultiplier={fontScaleCaps.text}
+        accessibilityLabel="Поиск преподавателя по фамилии или ФИО"
       />
 
       {trimmed.length < 2 ? (
@@ -311,13 +360,20 @@ function TeacherTab({ active, onSelect }: SubjectTabProps) {
             return (
               <Pressable
                 onPress={() => onSelect(makeTeacherSubject(item))}
+                accessibilityRole="button"
+                accessibilityState={{ selected: isActive }}
+                accessibilityLabel={item.teacher}
                 style={({ pressed }) => [
                   styles.row,
                   pressed && styles.pressed,
                 ]}
               >
                 <View style={styles.rowText}>
-                  <Text style={styles.rowTitle} numberOfLines={1}>
+                  <Text
+                    maxFontSizeMultiplier={fontScaleCaps.text}
+                    style={styles.rowTitle}
+                    numberOfLines={1}
+                  >
                     {item.teacher}
                   </Text>
                 </View>
@@ -448,6 +504,8 @@ function RoomTab({ active, onSelect }: SubjectTabProps) {
           autoCapitalize="none"
           autoCorrect={false}
           style={styles.input}
+          maxFontSizeMultiplier={fontScaleCaps.text}
+          accessibilityLabel="Поиск аудитории"
         />
 
         {loading ? (
@@ -482,17 +540,36 @@ function RoomTab({ active, onSelect }: SubjectTabProps) {
               return (
                 <Pressable
                   onPress={() => onSelect(makeRoomSubject(item, buildingName))}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: isActive }}
+                  accessibilityLabel={[
+                    item.room,
+                    item.room_type && item.room_type !== "-"
+                      ? item.room_type
+                      : null,
+                  ]
+                    .filter(Boolean)
+                    .join(", ")}
                   style={({ pressed }) => [
                     styles.row,
                     pressed && styles.pressed,
                   ]}
                 >
                   <View style={styles.rowText}>
-                    <Text style={styles.rowTitle} numberOfLines={1}>
+                    <Text
+                      maxFontSizeMultiplier={fontScaleCaps.text}
+                      style={styles.rowTitle}
+                      numberOfLines={1}
+                    >
                       {item.room}
                     </Text>
                     {item.room_type && item.room_type !== "-" ? (
-                      <Text style={styles.rowSubtitle}>{item.room_type}</Text>
+                      <Text
+                        maxFontSizeMultiplier={fontScaleCaps.text}
+                        style={styles.rowSubtitle}
+                      >
+                        {item.room_type}
+                      </Text>
                     ) : null}
                   </View>
                   {isActive ? (
@@ -537,10 +614,17 @@ function RoomTab({ active, onSelect }: SubjectTabProps) {
           renderItem={({ item }) => (
             <Pressable
               onPress={() => openBuilding(item)}
+              accessibilityRole="button"
+              accessibilityLabel={buildingLabel(item)}
+              accessibilityHint="Открыть список аудиторий"
               style={({ pressed }) => [styles.row, pressed && styles.pressed]}
             >
               <View style={styles.rowText}>
-                <Text style={styles.rowTitle} numberOfLines={1}>
+                <Text
+                  maxFontSizeMultiplier={fontScaleCaps.text}
+                  style={styles.rowTitle}
+                  numberOfLines={1}
+                >
                   {buildingLabel(item)}
                 </Text>
               </View>
@@ -607,9 +691,11 @@ const styles = StyleSheet.create({
   },
   tab: {
     flex: 1,
+    minHeight: minTouchTarget,
     paddingVertical: 8,
     borderRadius: 8,
     alignItems: "center",
+    justifyContent: "center",
   },
   tabActive: { backgroundColor: colors.surface },
   tabText: {
@@ -629,6 +715,7 @@ const styles = StyleSheet.create({
     fontFamily: fonts.body,
     fontSize: 15,
     color: colors.text,
+    minHeight: minTouchTarget,
   },
   hint: {
     fontFamily: fonts.body,
@@ -716,6 +803,8 @@ const styles = StyleSheet.create({
     fontSize: 15,
   },
   secondaryButton: {
+    minHeight: minTouchTarget,
+    justifyContent: "center",
     paddingVertical: 12,
     alignItems: "center",
     marginTop: 4,
@@ -725,6 +814,7 @@ const styles = StyleSheet.create({
     color: colors.primary,
     fontSize: 14,
   },
+  groupTab: { paddingBottom: spacing.md },
   groupName: {
     fontFamily: fonts.heading,
     fontSize: 22,
@@ -744,6 +834,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     alignSelf: "flex-start",
+    minHeight: minTouchTarget,
     paddingVertical: 4,
   },
   backText: {

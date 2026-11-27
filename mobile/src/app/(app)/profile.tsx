@@ -150,10 +150,16 @@ export default function ProfileScreen() {
 
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
         {error ? (
-          <View style={styles.errorCard}>
+          <View
+            style={styles.errorCard}
+            accessibilityRole="alert"
+            accessibilityLiveRegion="polite"
+          >
             <Text style={styles.errorText}>{error}</Text>
             <Pressable
               onPress={() => void reload()}
+              accessibilityRole="button"
+              accessibilityLabel="Повторить загрузку данных профиля"
               style={({ pressed }) => [
                 styles.retryButton,
                 pressed && styles.pressed,

@@ -1,7 +1,13 @@
 import { Ionicons } from "@expo/vector-icons";
 import { StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { colors, fonts, radii, spacing } from "../constants/theme";
+import {
+  colors,
+  fontScaleCaps,
+  fonts,
+  radii,
+  spacing,
+} from "../constants/theme";
 import { useNetworkStatus } from "../context/NetworkStatusContext";
 
 export function OfflineBanner() {
@@ -14,6 +20,7 @@ export function OfflineBanner() {
     <View
       pointerEvents="none"
       style={[styles.banner, { bottom: insets.bottom + 68 }]}
+      accessibilityRole="alert"
       accessibilityLiveRegion="polite"
     >
       <Ionicons
@@ -21,7 +28,12 @@ export function OfflineBanner() {
         size={16}
         color={colors.warningText}
       />
-      <Text style={styles.text}>Нет подключения к интернету</Text>
+      <Text
+        maxFontSizeMultiplier={fontScaleCaps.compact}
+        style={styles.text}
+      >
+        Нет подключения к интернету
+      </Text>
     </View>
   );
 }
