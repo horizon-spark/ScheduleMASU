@@ -59,18 +59,36 @@ export function setTokensRefreshedHandler(fn: TokensRefreshedHandler | null) {
   onTokensRefreshed = fn;
 }
 
-// ── Основной инстанс ─────────────────────────────────────────
-export const api = create({
+// ── Безопасный разбор JSON ───────────────────────────────────
+// Nginx/шлюз может вернуть текст вроде "upstream connect error..." с
+// content-type JSON. Не даём Axios упасть с SyntaxError до обработки статуса.
+function parseJsonSafely(data: unknown): unknown {
+  if (typeof data !== "string" || data.length === 0) return data;
+
+  try {
+    return JSON.parse(data);
+  } catch {
+    return data;
+  }
+}
+
+const clientDefaults = {
   baseURL: baseUrl,
   timeout: 15_000,
   headers: { "Content-Type": "application/json" },
+  transformResponse: [parseJsonSafely],
+};
+
+// ── Основной инстанс ─────────────────────────────────────────
+export const api = create({
+  ...clientDefaults,
+  headers: { ...clientDefaults.headers },
 });
 
 // ── «Голый» инстанс для /refresh и /logout: без интерсепторов ──
 const raw = create({
-  baseURL: baseUrl,
-  timeout: 15_000,
-  headers: { "Content-Type": "application/json" },
+  ...clientDefaults,
+  headers: { ...clientDefaults.headers },
 });
 
 // ── Request: подставляем access из памяти (без await — интерсептор sync) ──

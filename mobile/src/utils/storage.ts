@@ -1,5 +1,6 @@
 // utils/storage.ts
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import type { Course, Faculty, Group } from "../api/types";
 import type { ScheduleSubject } from "../types/schedule";
 import { isScheduleSubject } from "../types/schedule";
 
@@ -10,7 +11,17 @@ const KEYS = {
   subject: "scheduleSubject",
 } as const;
 
-export const saveSelectedGroup = async (group: any) => {
+function parseStored<T>(raw: string | null): T | null {
+  if (!raw) return null;
+
+  try {
+    return JSON.parse(raw) as T;
+  } catch {
+    return null;
+  }
+}
+
+export const saveSelectedGroup = async (group: Group | null) => {
   if (group) {
     await AsyncStorage.setItem(KEYS.group, JSON.stringify(group));
   } else {
@@ -18,12 +29,12 @@ export const saveSelectedGroup = async (group: any) => {
   }
 };
 
-export const getSelectedGroup = async () => {
+export const getSelectedGroup = async (): Promise<Group | null> => {
   const data = await AsyncStorage.getItem(KEYS.group);
-  return data ? JSON.parse(data) : null;
+  return parseStored<Group>(data);
 };
 
-export const saveSelectedFaculty = async (faculty: any) => {
+export const saveSelectedFaculty = async (faculty: Faculty | null) => {
   if (faculty) {
     await AsyncStorage.setItem(KEYS.faculty, JSON.stringify(faculty));
   } else {
@@ -31,12 +42,12 @@ export const saveSelectedFaculty = async (faculty: any) => {
   }
 };
 
-export const getSelectedFaculty = async () => {
+export const getSelectedFaculty = async (): Promise<Faculty | null> => {
   const data = await AsyncStorage.getItem(KEYS.faculty);
-  return data ? JSON.parse(data) : null;
+  return parseStored<Faculty>(data);
 };
 
-export const saveSelectedCourse = async (course: any) => {
+export const saveSelectedCourse = async (course: Course | null) => {
   if (course) {
     await AsyncStorage.setItem(KEYS.course, JSON.stringify(course));
   } else {
@@ -44,9 +55,9 @@ export const saveSelectedCourse = async (course: any) => {
   }
 };
 
-export const getSelectedCourse = async () => {
+export const getSelectedCourse = async (): Promise<Course | null> => {
   const data = await AsyncStorage.getItem(KEYS.course);
-  return data ? JSON.parse(data) : null;
+  return parseStored<Course>(data);
 };
 
 export const saveSelectedSubject = async (
