@@ -26,6 +26,7 @@ export interface CachedSchedule {
   timetable: Lesson[];
   update: string | null;
   fetchedAt: number;
+  stale?: boolean;
 }
 
 type StoredSchedule = Omit<CachedSchedule, "version">;
@@ -67,6 +68,7 @@ function parseCachedSchedule(value: unknown): CachedSchedule | null {
     timetable,
     update: typeof candidate.update === "string" ? candidate.update : null,
     fetchedAt: candidate.fetchedAt,
+    stale: candidate.stale === true,
   };
 }
 
@@ -179,6 +181,7 @@ export async function writeScheduleCache(
       .filter((item): item is Lesson => item !== null),
     update: typeof value.update === "string" ? value.update : null,
     fetchedAt: value.fetchedAt,
+    stale: value.stale === true,
   };
 
   memory.set(key, entry);

@@ -79,6 +79,11 @@ describe("normalizeScheduleResponse", () => {
     expect(response.success).toBe(true);
     expect(response.timetable).toHaveLength(1);
   });
+
+  it("passes the stale flag from the proxy", () => {
+    expect(normalizeScheduleResponse({ stale: true }).stale).toBe(true);
+    expect(normalizeScheduleResponse({}).stale).toBe(false);
+  });
 });
 
 describe("normalize collection responses", () => {

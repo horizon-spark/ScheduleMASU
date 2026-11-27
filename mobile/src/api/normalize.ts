@@ -242,6 +242,7 @@ export function normalizeScheduleResponse(data: unknown): ScheduleResponse {
   return {
     success,
     update,
+    stale: record.stale === true,
     timetable: normalizeCollection(rawTimetable, normalizeLesson),
   };
 }

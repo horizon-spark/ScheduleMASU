@@ -63,6 +63,7 @@ export function useSchedule(pagerRef: PagerRef) {
   const [schedule, setSchedule] = useState<Lesson[]>([]);
   const [update, setUpdate] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [isStale, setIsStale] = useState(false);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [isWeekLoading, setIsWeekLoading] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -124,6 +125,7 @@ export function useSchedule(pagerRef: PagerRef) {
         if (cached) {
           setSchedule(cached.timetable);
           setUpdate(cached.update);
+          setIsStale(cached.stale === true);
           setIsWeekLoading(false);
           setIsRefreshing(false);
           finishInitialLoading();
@@ -151,12 +153,14 @@ export function useSchedule(pagerRef: PagerRef) {
         const nextUpdate = res.update ?? null;
         setSchedule(res.timetable);
         setUpdate(nextUpdate);
+        setIsStale(res.stale === true);
         setError(null);
 
         void writeScheduleCache(key, {
           timetable: res.timetable,
           update: nextUpdate,
           fetchedAt: Date.now(),
+          stale: res.stale === true,
         });
       } catch (err) {
         if (seq !== requestSeq.current) return;
@@ -248,6 +252,7 @@ export function useSchedule(pagerRef: PagerRef) {
           setSchedule([]);
           setUpdate(null);
           setError(null);
+          setIsStale(false);
 
           if (nextSubject) {
             setIsWeekLoading(true);
@@ -331,6 +336,7 @@ export function useSchedule(pagerRef: PagerRef) {
     setSchedule([]);
     setUpdate(null);
     setError(null);
+    setIsStale(false);
     setIsWeekLoading(true);
   }, []);
 
@@ -384,6 +390,7 @@ export function useSchedule(pagerRef: PagerRef) {
     setSchedule([]);
     setUpdate(null);
     setError(null);
+    setIsStale(false);
     setIsWeekLoading(true);
   }, []);
 
@@ -400,6 +407,7 @@ export function useSchedule(pagerRef: PagerRef) {
     schedule,
     update,
     error,
+    isStale,
     isInitialLoading,
     isWeekLoading,
     isRefreshing,

@@ -71,6 +71,11 @@ const config = {
       .filter(Boolean),
   },
 
+  cache: {
+    // Сколько хранить последний успешный ответ для stale-if-error.
+    staleTtlSec: int("CACHE_STALE_TTL_SEC", 24 * 60 * 60),
+  },
+
   scheduleApi: {
     url: required("SCHEDULE_API_URL"),
     timeout: int("SCHEDULE_API_TIMEOUT_MS", 10000),

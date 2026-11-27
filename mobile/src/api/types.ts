@@ -76,6 +76,8 @@ export interface GroupsResponse extends ApiResponse {
 
 export interface ScheduleResponse extends ApiResponse {
   timetable: Lesson[];
+  /** true, если прокси отдал последний успешный кеш вместо upstream. */
+  stale?: boolean;
 }
 
 export interface BuildingsResponse extends ApiResponse {

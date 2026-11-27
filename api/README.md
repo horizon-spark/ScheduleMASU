@@ -7,7 +7,7 @@
 - `POST /api/login` — LDAP-аутентификация, выдача access/refresh токенов.
 - `POST /api/refresh`, `POST /api/logout`, `GET /api/me`.
 - Прокси расписания: институты, курсы, группы и подгруппы, преподаватели, корпуса и аудитории, расписание по группе/преподавателю/аудитории, доступные даты, время обновления.
-- Redis-кеш, rate-limit, структурированные логи pino.
+- Redis-кеш, stale-if-error (последний успешный ответ при падении upstream), rate-limit, структурированные логи pino.
 - `GET /health` — liveness, `GET /ready` — проверка Redis и LDAP.
 
 ## Требования
@@ -26,6 +26,8 @@
 - `REDIS_URL` — иначе не работают отзыв refresh-токенов и общий rate-limit;
   при недоступном Redis API стартует, но `/ready` и вход/refresh отвечают 503;
 - `REDIS_CONNECT_TIMEOUT_MS` — сколько ждать Redis при старте (по умолчанию 2000);
+- `CACHE_STALE_TTL_SEC` — сколько хранить последний успешный ответ для
+  stale-if-error (по умолчанию 86400 секунд);
 - `SCHEDULE_API_BEARER_TOKEN` — токен внешнего API;
 - `LDAP_*` — реквизиты сервисной учётной записи;
 - `CORS_ORIGINS` — необязательно, только для web-клиента. В production при

@@ -31,6 +31,7 @@ export default function ScheduleScreen() {
     schedule,
     update,
     error,
+    isStale,
     isInitialLoading,
     isWeekLoading,
     isRefreshing,
@@ -86,18 +87,18 @@ export default function ScheduleScreen() {
             onSelect={(i) => pagerRef.current?.setPage(i)}
           />
 
-          {error && schedule.length > 0 ? (
+          {(error || isStale) && schedule.length > 0 ? (
             <View style={styles.banner}>
               <Ionicons
-                name="cloud-offline-outline"
+                name={isStale ? "time-outline" : "cloud-offline-outline"}
                 size={15}
                 color={colors.warningText}
               />
               <Text style={styles.bannerText}>
-                Нет связи.{" "}
-                {update
-                  ? `Данные на ${formatUpdateTime(update)}`
-                  : "Показаны сохранённые данные"}
+                {isStale
+                  ? "Данные могут быть устаревшими"
+                  : "Нет связи. Показаны сохранённые данные"}
+                {update ? ` · данные на ${formatUpdateTime(update)}` : ""}
               </Text>
             </View>
           ) : null}

@@ -1,7 +1,7 @@
 const express = require("express");
 const axios = require("axios");
 const { requireAuth } = require("../middleware/auth");
-const { cached, setJson } = require("../cache");
+const { cached, refresh } = require("../cache");
 const config = require("../config");
 
 const RE_UID = /^[A-Za-z0-9_-]{1,64}$/;
@@ -52,8 +52,8 @@ function buildScheduleRouter() {
   }
 
   /**
-   * Отдаёт данные из Redis-кеша. `?fresh=1` игнорирует кеш и обновляет его —
-   * нужно для pull-to-refresh на клиенте.
+   * Отдаёт данные из Redis-кеша. `?fresh=1` игнорирует свежий кеш и
+   * обновляет его — нужно для pull-to-refresh на клиенте.
    */
   async function load(req, { key, ttl, path, params }) {
     const fetcher = () => fetchUpstream(req, path, params);
@@ -62,17 +62,21 @@ function buildScheduleRouter() {
       return cached(key, ttl, fetcher);
     }
 
-    const value = await fetcher();
-    if (value !== undefined && value !== null) {
-      await setJson(key, value, ttl);
-    }
-    return value;
+    return refresh(key, ttl, fetcher);
   }
 
   async function respond(req, res, resource, options) {
     try {
-      const data = await load(req, options);
-      return res.json(data);
+      const { value, stale } = await load(req, options);
+      if (stale) {
+        res.set("X-Data-Stale", "1");
+        // Добавляем флаг в тело, чтобы мобильный клиент мог показать
+        // предупреждение, не читая заголовки Axios.
+        if (value && typeof value === "object" && !Array.isArray(value)) {
+          return res.json({ ...value, stale: true });
+        }
+      }
+      return res.json(value);
     } catch (err) {
       return handleExternalError(err, req, res, resource);
     }
