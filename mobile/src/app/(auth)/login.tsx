@@ -1,9 +1,10 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import { useRef, useState, type ComponentRef } from "react";
+import { useEffect, useRef, useState, type ComponentRef } from "react";
 import {
   ActivityIndicator,
   Image,
+  Keyboard,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -24,13 +25,49 @@ export default function LoginScreen() {
   const insets = useSafeAreaInsets();
 
   const passwordRef = useRef<ComponentRef<typeof TextInput>>(null);
+  const scrollRef = useRef<ComponentRef<typeof ScrollView>>(null);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
 
   const canSubmit = username.trim().length > 0 && password.length > 0;
+
+  // После анимации клавиатуры прокручиваем форму так, чтобы активное поле
+  // и кнопка входа были видны даже на невысоких экранах.
+  const revealInput = (toEnd: boolean) => {
+    setTimeout(() => {
+      if (toEnd) {
+        scrollRef.current?.scrollToEnd({ animated: true });
+      } else {
+        scrollRef.current?.scrollTo({ y: 0, animated: true });
+      }
+    }, 250);
+  };
+
+  // Прячем крупный брендовый блок, пока открыта клавиатура: форма поднимается
+  // вверх и поля ввода остаются видимыми, особенно на невысоких экранах.
+  useEffect(() => {
+    const showEvent =
+      Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
+    const hideEvent =
+      Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
+
+    const show = Keyboard.addListener(showEvent, () =>
+      setIsKeyboardVisible(true),
+    );
+    const hide = Keyboard.addListener(hideEvent, () => {
+      setIsKeyboardVisible(false);
+      scrollRef.current?.scrollTo({ y: 0, animated: true });
+    });
+
+    return () => {
+      show.remove();
+      hide.remove();
+    };
+  }, []);
 
   const onSubmit = async () => {
     if (loading) return;
@@ -58,34 +95,39 @@ export default function LoginScreen() {
   return (
     <KeyboardAvoidingView
       style={styles.container}
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
       <ScrollView
+        ref={scrollRef}
         contentContainerStyle={[
           styles.content,
           {
-            paddingTop: insets.top + spacing.xl,
+            paddingTop:
+              insets.top + (isKeyboardVisible ? spacing.md : spacing.xl),
             paddingBottom: insets.bottom + spacing.xl,
           },
+          isKeyboardVisible && styles.contentKeyboard,
         ]}
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode={Platform.OS === "ios" ? "interactive" : "on-drag"}
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.hero}>
-          <View style={styles.brandPlate}>
-            <Image
-              source={require("../../../assets/images/brand/logo-full.png")}
-              style={styles.brandLogo}
-              resizeMode="contain"
-              accessibilityLabel="Мурманский арктический университет"
-            />
+        {!isKeyboardVisible ? (
+          <View style={styles.hero}>
+            <View style={styles.brandPlate}>
+              <Image
+                source={require("../../../assets/images/brand/logo-full.png")}
+                style={styles.brandLogo}
+                resizeMode="contain"
+                accessibilityLabel="Мурманский арктический университет"
+              />
+            </View>
+            <Text style={styles.title}>MAUverse</Text>
+            <Text style={styles.subtitle}>
+              Расписание Мурманского арктического университета
+            </Text>
           </View>
-          <Text style={styles.title}>MAUverse</Text>
-          <Text style={styles.subtitle}>
-            Расписание Мурманского арктического университета
-          </Text>
-        </View>
+        ) : null}
 
         <View style={styles.form}>
           <Text style={styles.label}>Логин</Text>
@@ -104,6 +146,7 @@ export default function LoginScreen() {
             importantForAutofill="yes"
             returnKeyType="next"
             editable={!loading}
+            onFocus={() => revealInput(false)}
             onSubmitEditing={() => passwordRef.current?.focus()}
             style={styles.input}
             accessibilityLabel="Логин"
@@ -128,6 +171,7 @@ export default function LoginScreen() {
               secureTextEntry={!showPassword}
               returnKeyType="go"
               editable={!loading}
+              onFocus={() => revealInput(true)}
               onSubmitEditing={onSubmit}
               style={[styles.input, styles.passwordInput]}
               accessibilityLabel="Пароль"
@@ -202,6 +246,9 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     justifyContent: "center",
     paddingHorizontal: spacing.xl,
+  },
+  contentKeyboard: {
+    justifyContent: "flex-start",
   },
   hero: { alignItems: "center", marginBottom: spacing.xl },
   brandPlate: {

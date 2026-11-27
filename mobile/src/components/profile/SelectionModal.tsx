@@ -93,11 +93,6 @@ export function SelectionModal<T>({
                 <Text style={styles.itemText} numberOfLines={2}>
                   {renderLabel(item)}
                 </Text>
-                <Ionicons
-                  name="chevron-forward"
-                  size={18}
-                  color={colors.textMuted}
-                />
               </Pressable>
             )}
           />

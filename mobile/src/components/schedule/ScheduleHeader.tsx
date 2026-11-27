@@ -14,9 +14,16 @@ type Props = {
   /** undefined — не показывать строку субъекта (начальная загрузка). */
   subject?: ScheduleSubject | null;
   onPressSubject?: () => void;
+  onPressTeacher?: () => void;
+  onPressRoom?: () => void;
 };
 
-export function ScheduleHeader({ subject, onPressSubject }: Props) {
+export function ScheduleHeader({
+  subject,
+  onPressSubject,
+  onPressTeacher,
+  onPressRoom,
+}: Props) {
   const insets = useSafeAreaInsets();
   const title = subject?.title ?? "Выбрать расписание";
   // Направление/роль не дублируем в шапке: у группы остаётся только код.
@@ -80,6 +87,57 @@ export function ScheduleHeader({ subject, onPressSubject }: Props) {
             Расписание
           </Text>
         )}
+
+        {subject !== undefined && (onPressTeacher || onPressRoom) ? (
+          <View style={styles.actions}>
+            {onPressTeacher ? (
+              <Pressable
+                onPress={onPressTeacher}
+                hitSlop={6}
+                accessibilityRole="button"
+                accessibilityLabel="Выбрать расписание преподавателя"
+                style={({ pressed }) => [
+                  styles.action,
+                  subject?.kind === "teacher" && styles.actionActive,
+                  pressed && styles.pressed,
+                ]}
+              >
+                <Ionicons
+                  name="person-outline"
+                  size={20}
+                  color={
+                    subject?.kind === "teacher"
+                      ? colors.onPrimary
+                      : colors.onPrimarySubtle
+                  }
+                />
+              </Pressable>
+            ) : null}
+            {onPressRoom ? (
+              <Pressable
+                onPress={onPressRoom}
+                hitSlop={6}
+                accessibilityRole="button"
+                accessibilityLabel="Выбрать расписание аудитории"
+                style={({ pressed }) => [
+                  styles.action,
+                  subject?.kind === "room" && styles.actionActive,
+                  pressed && styles.pressed,
+                ]}
+              >
+                <Ionicons
+                  name="business-outline"
+                  size={20}
+                  color={
+                    subject?.kind === "room"
+                      ? colors.onPrimary
+                      : colors.onPrimarySubtle
+                  }
+                />
+              </Pressable>
+            ) : null}
+          </View>
+        ) : null}
       </View>
     </View>
   );
@@ -101,6 +159,15 @@ const styles = StyleSheet.create({
     marginRight: spacing.md,
   },
   subject: { flex: 1, flexDirection: "row", alignItems: "center" },
+  actions: { flexDirection: "row", alignItems: "center" },
+  action: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  actionActive: { backgroundColor: "rgba(255,255,255,0.16)" },
   text: { flex: 1, paddingRight: spacing.sm },
   title: {
     color: colors.onPrimary,

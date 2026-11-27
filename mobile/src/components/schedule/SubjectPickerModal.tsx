@@ -40,7 +40,8 @@ const TABS = [
   { key: "room", label: "Аудитории" },
 ] as const;
 
-type TabKey = (typeof TABS)[number]["key"];
+export type SubjectPickerTab = (typeof TABS)[number]["key"];
+type TabKey = SubjectPickerTab;
 
 function buildingLabel(building: Building): string {
   if (!building.building) return "Без корпуса";
@@ -52,6 +53,8 @@ type Props = {
   visible: boolean;
   active: ScheduleSubject | null;
   group: Group | null;
+  /** Вкладка, с которой открыть пикер (иконки преподавателя/аудитории). */
+  initialTab?: SubjectPickerTab;
   onClose: () => void;
   onSelect: (subject: ScheduleSubject) => void;
 };
@@ -60,10 +63,13 @@ export function SubjectPickerModal({
   visible,
   active,
   group,
+  initialTab,
   onClose,
   onSelect,
 }: Props) {
-  const [tab, setTab] = useState<TabKey>(active?.kind ?? "group");
+  const [tab, setTab] = useState<TabKey>(
+    initialTab ?? active?.kind ?? "group",
+  );
   const insets = useSafeAreaInsets();
 
   // Компонент монтируется при открытии модалки (см. ScheduleScreen),
@@ -619,6 +625,13 @@ function RoomTab({ active, onSelect }: SubjectTabProps) {
               accessibilityHint="Открыть список аудиторий"
               style={({ pressed }) => [styles.row, pressed && styles.pressed]}
             >
+              <View style={styles.rowLead}>
+                <Ionicons
+                  name="business-outline"
+                  size={18}
+                  color={colors.primary}
+                />
+              </View>
               <View style={styles.rowText}>
                 <Text
                   maxFontSizeMultiplier={fontScaleCaps.text}
@@ -628,7 +641,6 @@ function RoomTab({ active, onSelect }: SubjectTabProps) {
                   {buildingLabel(item)}
                 </Text>
               </View>
-              <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
             </Pressable>
           )}
         />
@@ -759,6 +771,11 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderBottomWidth: 1,
     borderBottomColor: colors.borderLight,
+  },
+  rowLead: {
+    width: 28,
+    alignItems: "flex-start",
+    justifyContent: "center",
   },
   rowText: { flex: 1, paddingRight: 8 },
   rowTitle: { fontFamily: fonts.body, fontSize: 15, color: colors.text },

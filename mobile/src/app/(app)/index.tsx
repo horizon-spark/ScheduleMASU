@@ -9,7 +9,10 @@ import { DayTabs } from "../../components/schedule/DayTabs";
 import { PeriodPickerModal } from "../../components/schedule/PeriodPickerModal";
 import { ScheduleHeader } from "../../components/schedule/ScheduleHeader";
 import { ScheduleSkeleton } from "../../components/schedule/ScheduleSkeleton";
-import { SubjectPickerModal } from "../../components/schedule/SubjectPickerModal";
+import {
+  SubjectPickerModal,
+  type SubjectPickerTab,
+} from "../../components/schedule/SubjectPickerModal";
 import { WeekSwitcher } from "../../components/schedule/WeekSwitcher";
 import {
   DAYS_RU,
@@ -29,6 +32,7 @@ export default function ScheduleScreen() {
   const pagerRef = useRef<PagerView>(null);
   const router = useRouter();
   const [isPickerVisible, setIsPickerVisible] = useState(false);
+  const [pickerTab, setPickerTab] = useState<SubjectPickerTab | undefined>();
   const [isPeriodPickerVisible, setIsPeriodPickerVisible] = useState(false);
 
   const {
@@ -63,7 +67,10 @@ export default function ScheduleScreen() {
     return map;
   }, [schedule]);
 
-  const openPicker = () => setIsPickerVisible(true);
+  const openPicker = (tab?: SubjectPickerTab) => {
+    setPickerTab(tab);
+    setIsPickerVisible(true);
+  };
 
   if (isInitialLoading) {
     return (
@@ -76,7 +83,12 @@ export default function ScheduleScreen() {
 
   return (
     <View style={styles.container}>
-      <ScheduleHeader subject={subject} onPressSubject={openPicker} />
+      <ScheduleHeader
+        subject={subject}
+        onPressSubject={() => openPicker()}
+        onPressTeacher={() => openPicker("teacher")}
+        onPressRoom={() => openPicker("room")}
+      />
 
       {subject ? (
         <>
@@ -198,19 +210,55 @@ export default function ScheduleScreen() {
               {group ? "Выбрать расписание" : "Настроить группу"}
             </Text>
           </Pressable>
-          {!group ? (
+          <View style={styles.quickActions}>
             <Pressable
-              onPress={openPicker}
+              onPress={() => openPicker("teacher")}
+              accessibilityRole="button"
+              accessibilityLabel="Выбрать расписание преподавателя"
               style={({ pressed }) => [
-                styles.secondaryButton,
+                styles.quickAction,
                 pressed && styles.pressed,
               ]}
             >
-              <Text style={styles.secondaryText}>
-                Выбрать преподавателя или аудиторию
+              <View style={styles.quickIcon}>
+                <Ionicons
+                  name="person-outline"
+                  size={22}
+                  color={colors.primary}
+                />
+              </View>
+              <Text
+                maxFontSizeMultiplier={fontScaleCaps.text}
+                style={styles.quickLabel}
+              >
+                Преподаватель
               </Text>
             </Pressable>
-          ) : null}
+
+            <Pressable
+              onPress={() => openPicker("room")}
+              accessibilityRole="button"
+              accessibilityLabel="Выбрать расписание аудитории"
+              style={({ pressed }) => [
+                styles.quickAction,
+                pressed && styles.pressed,
+              ]}
+            >
+              <View style={styles.quickIcon}>
+                <Ionicons
+                  name="business-outline"
+                  size={22}
+                  color={colors.primary}
+                />
+              </View>
+              <Text
+                maxFontSizeMultiplier={fontScaleCaps.text}
+                style={styles.quickLabel}
+              >
+                Аудитория
+              </Text>
+            </Pressable>
+          </View>
         </View>
       )}
 
@@ -219,9 +267,14 @@ export default function ScheduleScreen() {
           visible
           active={subject}
           group={group}
-          onClose={() => setIsPickerVisible(false)}
+          initialTab={pickerTab}
+          onClose={() => {
+            setIsPickerVisible(false);
+            setPickerTab(undefined);
+          }}
           onSelect={(next) => {
             setIsPickerVisible(false);
+            setPickerTab(undefined);
             selectSubject(next);
           }}
         />
@@ -284,15 +337,36 @@ const styles = StyleSheet.create({
     ...typography.bodyStrong,
     color: colors.onPrimary,
   },
-  secondaryButton: {
-    marginTop: spacing.sm,
-    minHeight: 44,
-    justifyContent: "center",
-    paddingHorizontal: spacing.lg,
+  quickActions: {
+    flexDirection: "row",
+    alignSelf: "stretch",
+    gap: spacing.md,
+    marginTop: spacing.md,
   },
-  secondaryText: {
-    ...typography.caption,
-    color: colors.primary,
+  quickAction: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: spacing.xs,
+    minHeight: 84,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.sm,
+    borderRadius: radii.lg,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.borderLight,
+  },
+  quickIcon: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.primarySoft,
+  },
+  quickLabel: {
+    ...typography.captionStrong,
+    color: colors.text,
     textAlign: "center",
   },
   banner: {

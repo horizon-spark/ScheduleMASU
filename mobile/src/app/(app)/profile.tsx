@@ -5,7 +5,6 @@ import { useState } from "react";
 import {
   ActivityIndicator,
   Alert,
-  Image,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -91,16 +90,7 @@ export default function ProfileScreen() {
   };
 
   const header = (
-    <View style={[styles.header, { paddingTop: insets.top + spacing.sm }]}>
-      <View style={styles.headerTop}>
-        <Image
-          source={require("../../../assets/images/brand/logo-mark-white.png")}
-          style={styles.brandMark}
-          resizeMode="contain"
-          accessibilityLabel="МАУ"
-        />
-        <Text style={styles.headerEyebrow}>Профиль</Text>
-      </View>
+    <View style={[styles.header, { paddingTop: insets.top + spacing.md }]}>
       <View style={styles.identity}>
         <View style={styles.avatar}>
           <Text style={styles.avatarText}>
@@ -257,25 +247,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     paddingBottom: spacing.lg,
   },
-  headerEyebrow: {
-    ...typography.micro,
-    color: colors.onPrimaryMuted,
-    textTransform: "uppercase",
-    letterSpacing: 0.8,
-  },
-  headerTop: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-  },
-  brandMark: {
-    width: 34,
-    height: 15,
-  },
   identity: {
     flexDirection: "row",
     alignItems: "center",
-    marginTop: spacing.sm,
   },
   avatar: {
     width: 56,
