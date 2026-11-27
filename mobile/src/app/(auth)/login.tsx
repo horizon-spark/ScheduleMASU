@@ -25,7 +25,9 @@ export default function LoginScreen() {
   const insets = useSafeAreaInsets();
 
   const passwordRef = useRef<ComponentRef<typeof TextInput>>(null);
-  const scrollRef = useRef<ComponentRef<typeof ScrollView>>(null);
+  const hideKeyboardTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -35,18 +37,6 @@ export default function LoginScreen() {
 
   const canSubmit = username.trim().length > 0 && password.length > 0;
 
-  // После анимации клавиатуры прокручиваем форму так, чтобы активное поле
-  // и кнопка входа были видны даже на невысоких экранах.
-  const revealInput = (toEnd: boolean) => {
-    setTimeout(() => {
-      if (toEnd) {
-        scrollRef.current?.scrollToEnd({ animated: true });
-      } else {
-        scrollRef.current?.scrollTo({ y: 0, animated: true });
-      }
-    }, 250);
-  };
-
   // Прячем крупный брендовый блок, пока открыта клавиатура: форма поднимается
   // вверх и поля ввода остаются видимыми, особенно на невысоких экранах.
   useEffect(() => {
@@ -55,15 +45,26 @@ export default function LoginScreen() {
     const hideEvent =
       Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
 
-    const show = Keyboard.addListener(showEvent, () =>
-      setIsKeyboardVisible(true),
-    );
+    const show = Keyboard.addListener(showEvent, () => {
+      if (hideKeyboardTimerRef.current) {
+        clearTimeout(hideKeyboardTimerRef.current);
+        hideKeyboardTimerRef.current = null;
+      }
+      setIsKeyboardVisible(true);
+    });
     const hide = Keyboard.addListener(hideEvent, () => {
-      setIsKeyboardVisible(false);
-      scrollRef.current?.scrollTo({ y: 0, animated: true });
+      // При переходе между полями Android иногда присылает hide/show
+      // подряд. Небольшая задержка не даёт брендовому блоку мигать.
+      hideKeyboardTimerRef.current = setTimeout(() => {
+        hideKeyboardTimerRef.current = null;
+        setIsKeyboardVisible(false);
+      }, 120);
     });
 
     return () => {
+      if (hideKeyboardTimerRef.current) {
+        clearTimeout(hideKeyboardTimerRef.current);
+      }
       show.remove();
       hide.remove();
     };
@@ -98,7 +99,6 @@ export default function LoginScreen() {
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
       <ScrollView
-        ref={scrollRef}
         contentContainerStyle={[
           styles.content,
           {
@@ -114,14 +114,12 @@ export default function LoginScreen() {
       >
         {!isKeyboardVisible ? (
           <View style={styles.hero}>
-            <View style={styles.brandPlate}>
-              <Image
-                source={require("../../../assets/images/brand/logo-full.png")}
-                style={styles.brandLogo}
-                resizeMode="contain"
-                accessibilityLabel="Мурманский арктический университет"
-              />
-            </View>
+            <Image
+              source={require("../../../assets/images/brand/logo-full.png")}
+              style={styles.brandLogo}
+              resizeMode="contain"
+              accessibilityLabel="Мурманский арктический университет"
+            />
             <Text style={styles.title}>MAUverse</Text>
             <Text style={styles.subtitle}>
               Расписание Мурманского арктического университета
@@ -146,7 +144,6 @@ export default function LoginScreen() {
             importantForAutofill="yes"
             returnKeyType="next"
             editable={!loading}
-            onFocus={() => revealInput(false)}
             onSubmitEditing={() => passwordRef.current?.focus()}
             style={styles.input}
             accessibilityLabel="Логин"
@@ -171,7 +168,6 @@ export default function LoginScreen() {
               secureTextEntry={!showPassword}
               returnKeyType="go"
               editable={!loading}
-              onFocus={() => revealInput(true)}
               onSubmitEditing={onSubmit}
               style={[styles.input, styles.passwordInput]}
               accessibilityLabel="Пароль"
@@ -251,22 +247,11 @@ const styles = StyleSheet.create({
     justifyContent: "flex-start",
   },
   hero: { alignItems: "center", marginBottom: spacing.xl },
-  brandPlate: {
-    width: 264,
-    maxWidth: "100%",
-    alignItems: "center",
-    backgroundColor: colors.surface,
-    borderRadius: radii.lg,
-    borderWidth: 1,
-    borderColor: colors.borderLight,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.lg,
-    marginBottom: spacing.lg,
-  },
   brandLogo: {
     width: 240,
     maxWidth: "100%",
     aspectRatio: 240 / 49,
+    marginBottom: spacing.lg,
   },
   title: {
     fontFamily: fonts.heading,

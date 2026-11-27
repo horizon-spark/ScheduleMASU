@@ -198,7 +198,9 @@ export default function ScheduleScreen() {
               : "Настройте группу или выберите преподавателя/аудиторию"}
           </Text>
           <Pressable
-            onPress={() => (group ? openPicker() : router.push("/setup"))}
+            onPress={() =>
+              group ? openPicker() : router.navigate("/profile")
+            }
             style={({ pressed }) => [
               styles.chooseButton,
               pressed && styles.pressed,
