@@ -75,6 +75,7 @@ export function SelectionModal<T>({
             data={data}
             keyExtractor={keyExtractor}
             keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
             style={styles.list}
             contentContainerStyle={styles.listContent}
             ListEmptyComponent={

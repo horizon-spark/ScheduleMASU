@@ -1,5 +1,6 @@
 import { Stack, useRouter, useSegments } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
+import Constants, { ExecutionEnvironment } from "expo-constants";
 import { useFonts } from "expo-font";
 import { Montserrat_600SemiBold } from "@expo-google-fonts/montserrat/600SemiBold";
 import { Montserrat_700Bold } from "@expo-google-fonts/montserrat/700Bold";
@@ -12,7 +13,12 @@ import { AuthProvider, useAuth } from "../context/AuthContext";
 
 // Держим native splash, пока восстанавливаем сохранённую сессию.
 SplashScreen.preventAutoHideAsync().catch(() => {});
-SplashScreen.setOptions({ duration: 300, fade: true });
+
+// setOptions не поддерживается в Expo Go и печатает WARN. В dev/release-сборке
+// (и на web) настраиваем анимацию как обычно.
+if (Constants.executionEnvironment !== ExecutionEnvironment.StoreClient) {
+  SplashScreen.setOptions({ duration: 300, fade: true });
+}
 
 function RootNavigator() {
   const { accessToken, isLoading } = useAuth();

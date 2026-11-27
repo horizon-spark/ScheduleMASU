@@ -66,6 +66,7 @@ export default function AboutScreen() {
           styles.content,
           { paddingBottom: insets.bottom + spacing.xl },
         ]}
+        showsVerticalScrollIndicator={false}
       >
         <View style={styles.hero}>
           <View style={styles.brandPlate}>

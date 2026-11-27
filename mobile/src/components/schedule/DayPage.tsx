@@ -37,7 +37,7 @@ export function DayPage({
           styles.scrollContent,
           lessons.length === 0 && styles.emptyContent,
         ]}
-        showsVerticalScrollIndicator
+        showsVerticalScrollIndicator={false}
         alwaysBounceVertical
         refreshControl={
           <RefreshControl

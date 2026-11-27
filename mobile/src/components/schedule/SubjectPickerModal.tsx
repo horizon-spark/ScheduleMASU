@@ -355,6 +355,7 @@ function TeacherTab({ active, onSelect }: SubjectTabProps) {
           data={results}
           keyExtractor={(item) => item.UID}
           keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
           style={styles.list}
           contentContainerStyle={styles.listContent}
           ListEmptyComponent={
@@ -535,6 +536,7 @@ function RoomTab({ active, onSelect }: SubjectTabProps) {
             data={filteredRooms}
             keyExtractor={(item) => String(item.room_id)}
             keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
             style={styles.list}
             contentContainerStyle={styles.listContent}
             ListEmptyComponent={
@@ -612,6 +614,7 @@ function RoomTab({ active, onSelect }: SubjectTabProps) {
         <FlatList
           data={buildings}
           keyExtractor={(item) => String(item.bui_id)}
+          showsVerticalScrollIndicator={false}
           style={styles.list}
           contentContainerStyle={styles.listContent}
           ListEmptyComponent={

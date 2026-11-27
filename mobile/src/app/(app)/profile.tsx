@@ -142,7 +142,11 @@ export default function ProfileScreen() {
     <View style={styles.container}>
       {header}
 
-      <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+      >
         {error ? (
           <View
             style={styles.errorCard}

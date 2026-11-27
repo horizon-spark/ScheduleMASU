@@ -115,6 +115,7 @@ export function PeriodPickerModal({
             <FlatList
               data={weeks}
               keyExtractor={(week) => formatWeekRange(week)}
+              showsVerticalScrollIndicator={false}
               style={styles.list}
               initialScrollIndex={Math.max(0, selectedIndex - 2)}
               getItemLayout={(_, index) => ({

@@ -93,6 +93,7 @@ export default function SetupScreen() {
           styles.content,
           { paddingBottom: insets.bottom + spacing.xxl },
         ]}
+        showsVerticalScrollIndicator={false}
       >
         <Text style={styles.intro}>
           Чтобы показывать расписание, нужно выбрать факультет, курс и группу.
