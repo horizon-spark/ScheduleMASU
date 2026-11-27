@@ -37,8 +37,8 @@
 
 | Переменная | development | preview | production |
 |---|---|---|---|
-| `EXPO_PUBLIC_API_BASE_URL` | адрес прокси | адрес прокси (можно HTTP, пока нет TLS) | **обязательно `https://…/api`** |
-| `EXPO_PUBLIC_ALLOW_HTTP` | не задавать | `1` (только пока прокси без TLS) | не задавать |
+| `EXPO_PUBLIC_API_BASE_URL` | адрес прокси | `https://srv-project.mspu.edu.ru/api` (HTTP — только пока TLS не установлен) | **обязательно `https://…/api`** |
+| `EXPO_PUBLIC_ALLOW_HTTP` | не задавать | `1` только для HTTP-fallback; после установки TLS не задавать | не задавать |
 | `APP_VARIANT` | задаётся в `eas.json` | задаётся в `eas.json` | задаётся в `eas.json` |
 
 `app.config.js` не даст собрать ни один EAS-профиль без `EXPO_PUBLIC_API_BASE_URL`, а production — без HTTPS. `src/api/client.ts` дополнительно проверяет это в рантайме.
@@ -67,7 +67,22 @@ Production-приложение обязано ходить только по HT
 - `usesCleartextTraffic` для production выключается автоматически (`app.config.js`);
 - серверная часть: TLS-оверлей nginx, сертификат и деплой описаны в README `api/`.
 
-Пока публичного домена нет, preview-сборка может работать по HTTP с `EXPO_PUBLIC_ALLOW_HTTP=1`. В production этот флаг не задаётся.
+Текущий тестовый контур:
+
+```text
+EXPO_PUBLIC_API_BASE_URL=https://srv-project.mspu.edu.ru/api
+```
+
+Домен и сервер доступны только из сети университета, сертификат — корпоративный
+CA. Тестовое устройство должно доверять корневому сертификату CA: на iOS его
+нужно установить и включить полное доверие, на Android — иметь managed-профиль
+с CA в системном хранилище или development build с network security config.
+Expo Go может не доверять пользовательскому CA.
+
+Пока публичного домена и внешнего доступа нет, preview-сборка может работать по
+HTTP с `EXPO_PUBLIC_ALLOW_HTTP=1`. В production этот флаг не задаётся. Для
+публикации в RuStore потребуется публично доверенный сертификат и внешний
+HTTPS-доступ, а не только внутренний контур.
 
 ## 5. Чек-лист RuStore
 

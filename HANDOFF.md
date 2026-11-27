@@ -19,7 +19,9 @@
   собираются и публикуются в GHCR.
 - Сервер: настроен pull-деплой через systemd; последний успешный деплой после
   фикса `b5b0643` нужно подтвердить через `journalctl` (см. раздел 6).
-- TLS: **не настроен**, сервер пока работает по HTTP-схеме.
+- TLS: домен `srv-project.mspu.edu.ru` резолвится в `10.1.3.62`; сервер пока
+  работает по HTTP (443 закрыт), доступ только из сети университета.
+  Корпоративный PEM-сертификат получен, но ещё не установлен.
 - RuStore: **сборка не делалась**, package name и ключ подписи не финализированы.
 
 ---
@@ -234,7 +236,8 @@ api/deploy/systemd/schedulemasu-deploy.timer
 - репозиторий: `/opt/schedulemasu`;
 - `DEPLOY_PATH=/opt/schedulemasu/api`;
 - для теста используется `IMAGE_TAG=staging`;
-- TLS пока нет, поэтому `COMPOSE_FILES="-f docker-compose.yml"`;
+- TLS пока не установлен, поэтому `COMPOSE_FILES="-f docker-compose.yml"`;
+  после установки сертификата добавить `-f docker-compose.tls.yml`;
 - `PULL_GIT=1`, репозиторий склонирован от root.
 
 **Важно:** systemd запускает установленную копию
@@ -309,7 +312,10 @@ systemctl list-timers schedulemasu-deploy.timer
 
 ### P3 — после/по желанию
 
-- TLS: домен, сертификат, `docker-compose.tls.yml`, `COMPOSE_FILES` на сервере.
+- TLS: установить полученный корпоративный сертификат на
+  `srv-project.mspu.edu.ru` через `api/scripts/install-tls-cert.sh`, включить
+  `docker-compose.tls.yml` в `COMPOSE_FILES`, проверить доверие CA на тестовых
+  устройствах. Внешний доступ и Let's Encrypt не планируются.
 - Мониторинг `/health`/`/ready`, алерты, ротация логов Docker.
 - Бэкап `.env`, сертификатов и ключей подписи.
 - Crash-reporting/аналитика, OTA (`expo-updates`) — по решению.
@@ -329,8 +335,11 @@ systemctl list-timers schedulemasu-deploy.timer
   успешного ответа. При самом первом входе кеша нет.
 - Автоматического rollback при неудачном health-check нет: deploy падает, старые
   контейнеры/образы нужно откатывать вручную.
-- На сервере ещё нет TLS; production-клиент по HTTPS не проверить до появления
-  домена/сертификата.
+- TLS будет доступен только из сети университета: внешние порты 80/443 не
+  проброшены. Let's Encrypt/HTTP-01 неприменим, нужен корпоративный CA.
+- Корпоративный CA должен быть доверен на тестовых устройствах. На личном
+  Android пользовательский CA не доверяется приложению без managed-профиля или
+  network security config; Expo Go может не доверять такому CA.
 - В репозитории нет E2E-тестов и тестов на реальном LDAP.
 - `mobile/.env` и `api/.env` не в git; не коммитить.
 

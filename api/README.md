@@ -85,35 +85,166 @@ curl http://127.0.0.1/health
 docker compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.tls.yml up -d --build
 ```
 
-## TLS (production)
+## TLS (внутренний контур)
 
-TLS включается оверлеем: базовый `docker-compose.yml` остаётся HTTP для разработки, production использует `docker-compose.tls.yml`.
+Текущая схема:
 
-1. Положите сертификаты в `nginx/certs/`:
-   - `fullchain.pem` — цепочка сертификатов;
-   - `privkey.pem` — приватный ключ (права `600`).
-2. Для локальной проверки можно выпустить self-signed сертификат:
-   ```bash
-   ./scripts/generate-self-signed-cert.sh debian.mspu.edu.ru 10.1.2.99
-   ```
-   Для релиза используйте доверенный сертификат (Let's Encrypt или корпоративный CA): мобильное приложение не должно доверять самоподписанному сертификату.
-3. Запустите с TLS:
-   ```bash
-   docker compose -f docker-compose.yml -f docker-compose.tls.yml up -d --build
-   ```
-4. Проверьте:
-   ```bash
-   curl -k https://<host>/health
-   curl -k https://<host>/ready
-   ```
-5. Откройте в firewall порты 80 и 443.
+- домен — `srv-project.mspu.edu.ru`;
+- сертификат — корпоративный CA университета;
+- сервер доступен только из сети университета, порты 80/443 наружу не
+  проброшены;
+- Let's Encrypt/HTTP-01 в такой схеме не используется: внешний CA не сможет
+  проверить домен.
+
+TLS включается оверлеем: базовый `docker-compose.yml` остаётся HTTP для
+разработки, production использует `docker-compose.tls.yml`.
+
+### 1. DNS
+
+Во внутренней DNS-зоне `mspu.edu.ru` должна быть A-запись:
+
+```text
+srv-project.mspu.edu.ru -> <внутренний IP сервера>
+```
+
+Проверьте с сервера и с тестового телефона:
+
+```bash
+getent hosts srv-project.mspu.edu.ru
+# или
+nslookup srv-project.mspu.edu.ru
+```
+
+Пока записи нет, HTTPS работать не будет: клиент не сможет разрешить имя.
+
+### 2. Сертификат от корпоративного CA
+
+Запросите сертификат на `srv-project.mspu.edu.ru` (CN и SAN должны содержать
+это имя). Нужны два файла:
+
+- `fullchain.pem` — листовой сертификат + промежуточные CA, без корневого;
+- `privkey.pem` — приватный ключ без пароля.
+
+Если CA выдаёт `.pfx`/`.p12`, сконвертируйте:
+
+```bash
+openssl pkcs12 -in cert.pfx -clcerts -nokeys -out leaf.pem
+openssl pkcs12 -in cert.pfx -nocerts -nodes -out privkey.pem
+# intermediate.pem — цепочка промежуточных сертификатов от CA
+cat leaf.pem intermediate.pem > fullchain.pem
+```
+
+Установите сертификат скриптом (он проверит соответствие ключа и цепочку):
+
+```bash
+cd /opt/schedulemasu/api
+./scripts/install-tls-cert.sh /path/fullchain.pem /path/privkey.pem /path/ca-root.pem
+```
+
+Без корневого сертификата для проверки:
+
+```bash
+./scripts/install-tls-cert.sh /path/fullchain.pem /path/privkey.pem
+```
+
+Скрипт кладёт файлы в `nginx/certs/` с правами `600`. Каталог исключён из git,
+поэтому деплой через `git checkout --force` сертификаты не удаляет.
+
+Проверить вручную:
+
+```bash
+openssl x509 -in nginx/certs/fullchain.pem -noout \
+  -subject -issuer -dates -ext subjectAltName
+openssl verify -CAfile /path/ca-root.pem nginx/certs/fullchain.pem
+```
+
+### 3. Запуск с TLS
+
+```bash
+cd /opt/schedulemasu/api
+docker compose -f docker-compose.yml -f docker-compose.tls.yml config --quiet
+docker compose -f docker-compose.yml -f docker-compose.tls.yml up -d --no-build
+```
+
+Для pull-деплоя в `/etc/schedulemasu/deploy.env`:
+
+```bash
+COMPOSE_FILES="-f docker-compose.yml -f docker-compose.tls.yml"
+```
+
+Затем:
+
+```bash
+sudo systemctl start schedulemasu-deploy.service
+sudo journalctl -u schedulemasu-deploy.service -n 100 --no-pager
+```
+
+Порты 80 и 443 должны быть открыты в firewall сервера, даже если доступ только
+из внутренней сети:
+
+```bash
+sudo ufw allow 80/tcp
+sudo ufw allow 443/tcp
+```
+
+### 4. Проверка
+
+С сервера и с тестового устройства в сети университета:
+
+```bash
+curl -I http://srv-project.mspu.edu.ru/health   # 301 → https
+curl https://srv-project.mspu.edu.ru/health
+curl https://srv-project.mspu.edu.ru/ready
+
+openssl s_client -connect srv-project.mspu.edu.ru:443 \
+  -servername srv-project.mspu.edu.ru \
+  -CAfile /path/ca-root.pem </dev/null
+```
 
 TLS-оверлей:
 
 - редиректит HTTP → HTTPS;
 - включает TLS 1.2/1.3;
-- добавляет HSTS, `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy`;
+- добавляет HSTS, `X-Content-Type-Options`, `X-Frame-Options`,
+  `Referrer-Policy`, `Permissions-Policy`;
 - проксирует `/api/`, `/health` и `/ready`.
+
+### 5. Доверие к корпоративному CA на устройствах
+
+Сам по себе сертификат сервера недостаточен: тестовое устройство должно
+доверять корневому сертификату университетского CA.
+
+- **Android:** пользовательский CA, установленный через настройки, по умолчанию
+  не доверяется приложениям (API 24+). Нужен управляемый корпоративный профиль
+  с CA в системном хранилище или development build с network security config,
+  разрешающим пользовательские CA. Expo Go может не доверять такому CA.
+- **iOS:** установите профиль CA и включите полное доверие в
+  `Settings → General → About → Certificate Trust Settings`.
+- Если тестовые устройства не могут доверять корпоративному CA, для проверки
+  HTTPS используйте публичный сертификат либо временно оставьте HTTP в
+  preview-сборке. В production самоподписанный/недоверенный сертификат
+  недопустим.
+
+`nginx.tls.conf` для тестового внутреннего домена включает HSTS с коротким
+`max-age=300`. После стабилизации домена и CA увеличьте его до `31536000`.
+Не включайте длинный HSTS, пока сертификат или CA могут смениться.
+
+### 6. Продление
+
+Корпоративный сертификат продлевается вручную. После получения новых файлов:
+
+```bash
+cd /opt/schedulemasu/api
+./scripts/install-tls-cert.sh /path/new-fullchain.pem /path/new-privkey.pem /path/ca-root.pem
+docker compose -f docker-compose.yml -f docker-compose.tls.yml exec nginx nginx -s reload
+```
+
+Для локальной проверки без корпоративного CA можно выпустить self-signed
+сертификат (только для тестов, не для приложения):
+
+```bash
+./scripts/generate-self-signed-cert.sh srv-project.mspu.edu.ru <внутренний-IP>
+```
 
 Для проверки конфигурации без запуска:
 
