@@ -98,7 +98,11 @@ export default function ProfileScreen() {
           </Text>
         </View>
         <View style={styles.identityText}>
-          <Text style={styles.name} numberOfLines={1}>
+          <Text
+            style={styles.name}
+            numberOfLines={2}
+            ellipsizeMode="tail"
+          >
             {user?.displayName || user?.username || "Пользователь"}
           </Text>
           <Text style={styles.identityMeta} numberOfLines={1}>
@@ -200,6 +204,8 @@ export default function ProfileScreen() {
             label="О приложении"
             value="Версия и поддержка"
             iconName="chevron-forward"
+            stacked
+            hint="Открыть информацию о приложении"
             onPress={() => router.push("/about")}
           />
         </InfoCard>

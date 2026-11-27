@@ -86,8 +86,6 @@ export default function ScheduleScreen() {
       <ScheduleHeader
         subject={subject}
         onPressSubject={() => openPicker()}
-        onPressTeacher={() => openPicker("teacher")}
-        onPressRoom={() => openPicker("room")}
       />
 
       {subject ? (
