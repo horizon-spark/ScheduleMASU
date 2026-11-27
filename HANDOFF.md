@@ -287,7 +287,9 @@ systemctl list-timers schedulemasu-deploy.timer
 
 ### P1 — до TLS/RuStore
 
-- Обновить Expo-пакеты по `npx expo install --check` и перепроверить сборку.
+- ~~Обновить Expo-пакеты по `npx expo install --check`~~ — сделано 2026-11-27
+  (`expo ~58.1.0`, 13 пакетов, `expo-doctor` 20/20, web-экспорт проходит);
+  осталось перепроверить release-сборку на Android-устройстве.
 - Добавить в CI `expo-doctor`, smoke-test Docker-образа, `trivy`, `gitleaks`,
   Dependabot.
 - QA на Android-устройстве: маленький экран, крупный шрифт, safe area, tab bar,
@@ -317,8 +319,10 @@ systemctl list-timers schedulemasu-deploy.timer
 
 ## 8. Известные ограничения
 
-- `npx expo install --check` показывает несколько patch-обновлений Expo-пакетов;
-  на момент handoff они ещё не обновлены.
+- Expo-пакеты обновлены 2026-11-27: `expo ~58.1.0` и 12 совместимых модулей.
+  `npx expo install --check` и `npx expo-doctor` (20/20) проходят; в
+  `app.json` добавлены config-плагины `expo-image`, `expo-status-bar`,
+  `expo-web-browser`, которые CLI не смог дописать в динамический конфиг.
 - Первый запуск не редиректит автоматически в setup: пользователь видит CTA
   «Настроить группу».
 - Stale-if-error работает только при доступном Redis и наличии прошлого
