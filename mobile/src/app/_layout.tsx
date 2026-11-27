@@ -7,6 +7,7 @@ import { OpenSans_400Regular } from "@expo-google-fonts/open-sans/400Regular";
 import { OpenSans_600SemiBold } from "@expo-google-fonts/open-sans/600SemiBold";
 import { useEffect } from "react";
 import { AppErrorBoundary } from "../components/AppErrorBoundary";
+import { NetworkStatusProvider } from "../context/NetworkStatusContext";
 import { AuthProvider, useAuth } from "../context/AuthContext";
 
 // Держим native splash, пока восстанавливаем сохранённую сессию.
@@ -75,9 +76,11 @@ export default function RootLayout() {
 
   return (
     <AppErrorBoundary>
-      <AuthProvider>
-        <RootNavigator />
-      </AuthProvider>
+      <NetworkStatusProvider>
+        <AuthProvider>
+          <RootNavigator />
+        </AuthProvider>
+      </NetworkStatusProvider>
     </AppErrorBoundary>
   );
 }

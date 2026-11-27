@@ -1,7 +1,8 @@
 // src/hooks/useProfileSelection.ts
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { getCourses, getFaculties, getMainGroups } from "../api/schedule";
 import type { Course, Faculty, Group } from "../api/types";
+import { useNetworkStatus } from "../context/NetworkStatusContext";
 import { describeRequestError } from "../utils/apiError";
 import { makeGroupSubject } from "../utils/subjects";
 import {
@@ -26,6 +27,8 @@ export function useProfileSelection(onAfterSelect?: () => void) {
   const [isLoading, setIsLoading] = useState(false);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { isOffline } = useNetworkStatus();
+  const wasOfflineRef = useRef(isOffline);
 
   const load = useCallback(async () => {
     setIsInitialLoading(true);
@@ -99,6 +102,15 @@ export function useProfileSelection(onAfterSelect?: () => void) {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     void load();
   }, [load]);
+
+  // После восстановления сети повторяем загрузку без действий пользователя.
+  useEffect(() => {
+    const wasOffline = wasOfflineRef.current;
+    wasOfflineRef.current = isOffline;
+
+    if (!wasOffline || isOffline) return;
+    void load();
+  }, [isOffline, load]);
 
   const loadGroups = async (facId: number, courseId: number) => {
     setIsLoading(true);

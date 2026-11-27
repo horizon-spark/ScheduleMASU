@@ -1,7 +1,8 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Tabs } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import type { ColorValue } from "react-native";
+import { View, type ColorValue } from "react-native";
+import { OfflineBanner } from "../../components/OfflineBanner";
 import { colors, typography } from "../../constants/theme";
 
 /**
@@ -17,8 +18,9 @@ export default function AppLayout() {
   return (
     <>
       <StatusBar style="light" />
-      <Tabs
-        screenOptions={{
+      <View style={{ flex: 1 }}>
+        <Tabs
+          screenOptions={{
           tabBarActiveTintColor: colors.primary,
           tabBarInactiveTintColor: colors.textMuted,
           headerShown: false,
@@ -68,7 +70,17 @@ export default function AppLayout() {
             tabBarStyle: { display: "none" },
           }}
         />
+        <Tabs.Screen
+          name="setup"
+          options={{
+            href: null,
+            title: "Настройка",
+            tabBarStyle: { display: "none" },
+          }}
+        />
       </Tabs>
+        <OfflineBanner />
+      </View>
     </>
   );
 }

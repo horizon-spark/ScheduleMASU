@@ -8,6 +8,7 @@ import {
   getTeacherSchedule,
 } from "../api/schedule";
 import type { Group, Lesson } from "../api/types";
+import { useNetworkStatus } from "../context/NetworkStatusContext";
 import {
   addDays,
   getDayIndex,
@@ -67,6 +68,7 @@ export function useSchedule(pagerRef: PagerRef) {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [currentPage, setCurrentPage] = useState(0);
   const [initialPage, setInitialPage] = useState(0);
+  const { isOffline } = useNetworkStatus();
 
   const initialPageRef = useRef(0);
   const subjectRef = useRef<ScheduleSubject | null>(null);
@@ -76,6 +78,7 @@ export function useSchedule(pagerRef: PagerRef) {
   const isFocusedRef = useRef(false);
   const requestSeq = useRef(0);
   const inFlightCountRef = useRef(0);
+  const wasOfflineRef = useRef(isOffline);
 
   useEffect(() => {
     weekStartRef.current = weekStart;
@@ -294,6 +297,19 @@ export function useSchedule(pagerRef: PagerRef) {
 
     return () => subscription.remove();
   }, [loadWeek]);
+
+  // Сеть восстановилась: одна тихая ревалидация текущей недели.
+  useEffect(() => {
+    const wasOffline = wasOfflineRef.current;
+    wasOfflineRef.current = isOffline;
+
+    if (!wasOffline || isOffline) return;
+
+    const current = subjectRef.current;
+    if (!current || !isFocusedRef.current) return;
+
+    loadWeek(current, weekStartRef.current, { revalidate: true });
+  }, [isOffline, loadWeek]);
 
   // Синхронизация PagerView при первом появлении (в т.ч. после выбора субъекта)
   useEffect(() => {

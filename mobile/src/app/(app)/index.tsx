@@ -1,5 +1,6 @@
 // src/app/(app)/index.tsx
 import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
 import { useMemo, useRef, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import PagerView from "react-native-pager-view";
@@ -20,6 +21,7 @@ import { useSchedule } from "../../hooks/useSchedule";
 
 export default function ScheduleScreen() {
   const pagerRef = useRef<PagerView>(null);
+  const router = useRouter();
   const [isPickerVisible, setIsPickerVisible] = useState(false);
   const [isPeriodPickerVisible, setIsPeriodPickerVisible] = useState(false);
 
@@ -158,17 +160,34 @@ export default function ScheduleScreen() {
           </View>
           <Text style={styles.emptyTitle}>Расписание пока не выбрано</Text>
           <Text style={styles.emptyText}>
-            Выберите группу, преподавателя или аудиторию
+            {group
+              ? `Группа ${group.group} выбрана — откройте расписание`
+              : "Настройте группу или выберите преподавателя/аудиторию"}
           </Text>
           <Pressable
-            onPress={openPicker}
+            onPress={() => (group ? openPicker() : router.push("/setup"))}
             style={({ pressed }) => [
               styles.chooseButton,
               pressed && styles.pressed,
             ]}
           >
-            <Text style={styles.chooseText}>Выбрать расписание</Text>
+            <Text style={styles.chooseText}>
+              {group ? "Выбрать расписание" : "Настроить группу"}
+            </Text>
           </Pressable>
+          {!group ? (
+            <Pressable
+              onPress={openPicker}
+              style={({ pressed }) => [
+                styles.secondaryButton,
+                pressed && styles.pressed,
+              ]}
+            >
+              <Text style={styles.secondaryText}>
+                Выбрать преподавателя или аудиторию
+              </Text>
+            </Pressable>
+          ) : null}
         </View>
       )}
 
@@ -241,6 +260,17 @@ const styles = StyleSheet.create({
   chooseText: {
     ...typography.bodyStrong,
     color: colors.onPrimary,
+  },
+  secondaryButton: {
+    marginTop: spacing.sm,
+    minHeight: 44,
+    justifyContent: "center",
+    paddingHorizontal: spacing.lg,
+  },
+  secondaryText: {
+    ...typography.caption,
+    color: colors.primary,
+    textAlign: "center",
   },
   banner: {
     flexDirection: "row",
