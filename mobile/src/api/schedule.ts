@@ -1,5 +1,6 @@
 // src/api/schedule.ts
 import { api } from "./client";
+import { withRetry } from "./retry";
 import {
   normalizeBuildingsResponse,
   normalizeCoursesResponse,
@@ -32,14 +33,28 @@ type QueryOptions = { fresh?: boolean };
 const freshParams = (options: QueryOptions) =>
   options.fresh ? { params: { fresh: 1 } } : undefined;
 
+type RequestConfig = Parameters<typeof api.get>[1];
+
+/** GET-запросы расписания идемпотентны: повторяем только временные сбои. */
+async function getData(url: string, config?: RequestConfig) {
+  const response = await withRetry(() => api.get<unknown>(url, config), {
+    attempts: 2,
+    baseDelayMs: 800,
+    maxDelayMs: 2500,
+    jitterMs: 250,
+  });
+
+  return response.data;
+}
+
 // ── Институты, курсы, группы ──────────────────────────────
 export const getFaculties = async (): Promise<FacultiesResponse> => {
-  const { data } = await api.get("/faculties");
+  const data = await getData("/faculties");
   return normalizeFacultiesResponse(data);
 };
 
 export const getCourses = async (): Promise<CoursesResponse> => {
-  const { data } = await api.get("/courses");
+  const data = await getData("/courses");
   return normalizeCoursesResponse(data);
 };
 
@@ -47,7 +62,7 @@ export const getGroups = async (
   facId: number,
   courseId: number,
 ): Promise<GroupsResponse> => {
-  const { data } = await api.get(
+  const data = await getData(
     `/faculties/${seg(facId)}/courses/${seg(courseId)}/groups`,
   );
   return normalizeGroupsResponse(data);
@@ -57,7 +72,7 @@ export const getGroups = async (
 export const getGroupsByFaculty = async (
   facId: number,
 ): Promise<GroupsResponse> => {
-  const { data } = await api.get(`/faculties/${seg(facId)}/groups`);
+  const data = await getData(`/faculties/${seg(facId)}/groups`);
   return normalizeGroupsResponse(data);
 };
 
@@ -65,7 +80,7 @@ export const getGroupsByFaculty = async (
 export const getMainGroupsByFaculty = async (
   facId: number,
 ): Promise<GroupsResponse> => {
-  const { data } = await api.get(`/faculties/${seg(facId)}/groups/main`);
+  const data = await getData(`/faculties/${seg(facId)}/groups/main`);
   return normalizeGroupsResponse(data);
 };
 
@@ -74,7 +89,7 @@ export const getMainGroups = async (
   facId: number,
   courseId: number,
 ): Promise<GroupsResponse> => {
-  const { data } = await api.get(
+  const data = await getData(
     `/faculties/${seg(facId)}/courses/${seg(courseId)}/groups/main`,
   );
   return normalizeGroupsResponse(data);
@@ -82,24 +97,24 @@ export const getMainGroups = async (
 
 /** Подгруппы основной группы. */
 export const getSubgroups = async (uid: string): Promise<GroupsResponse> => {
-  const { data } = await api.get(`/groups/${seg(uid)}/subgroups`);
+  const data = await getData(`/groups/${seg(uid)}/subgroups`);
   return normalizeGroupsResponse(data);
 };
 
 // ── Корпуса и аудитории ───────────────────────────────────
 export const getBuildings = async (): Promise<BuildingsResponse> => {
-  const { data } = await api.get("/buildings");
+  const data = await getData("/buildings");
   return normalizeBuildingsResponse(data);
 };
 
 export const getRooms = async (buiId: number): Promise<RoomsResponse> => {
-  const { data } = await api.get(`/buildings/${seg(buiId)}/rooms`);
+  const data = await getData(`/buildings/${seg(buiId)}/rooms`);
   return normalizeRoomsResponse(data);
 };
 
 // ── Преподаватели ─────────────────────────────────────────
 export const getTeachers = async (): Promise<TeachersResponse> => {
-  const { data } = await api.get("/teachers");
+  const data = await getData("/teachers");
   return normalizeTeachersResponse(data);
 };
 
@@ -107,21 +122,21 @@ export const getTeachers = async (): Promise<TeachersResponse> => {
 export const searchTeachers = async (
   name: string,
 ): Promise<TeachersResponse> => {
-  const { data } = await api.get("/teachers/search", { params: { name } });
+  const data = await getData("/teachers/search", { params: { name } });
   return normalizeTeachersResponse(data);
 };
 
 // ── Расписание группы ─────────────────────────────────────
 /** Даты, на которые есть расписание группы (включая подгруппы). */
 export const getGroupDates = async (uid: string): Promise<DatesResponse> => {
-  const { data } = await api.get(`/groups/${seg(uid)}/dates`);
+  const data = await getData(`/groups/${seg(uid)}/dates`);
   return normalizeDatesResponse(data);
 };
 
 export const getGroupScheduleToday = async (
   uid: string,
 ): Promise<ScheduleResponse> => {
-  const { data } = await api.get(`/groups/${seg(uid)}/schedule/today`);
+  const data = await getData(`/groups/${seg(uid)}/schedule/today`);
   return normalizeScheduleResponse(data);
 };
 
@@ -131,7 +146,7 @@ export const getSchedule = async (
   end: string,
   options: QueryOptions = {},
 ): Promise<ScheduleResponse> => {
-  const { data } = await api.get(
+  const data = await getData(
     `/groups/${seg(uid)}/schedule/${seg(start)}/${seg(end)}`,
     freshParams(options),
   );
@@ -142,14 +157,14 @@ export const getSchedule = async (
 export const getTeacherDates = async (
   uid: string,
 ): Promise<DatesResponse> => {
-  const { data } = await api.get(`/teachers/${seg(uid)}/dates`);
+  const data = await getData(`/teachers/${seg(uid)}/dates`);
   return normalizeDatesResponse(data);
 };
 
 export const getTeacherScheduleToday = async (
   uid: string,
 ): Promise<ScheduleResponse> => {
-  const { data } = await api.get(`/teachers/${seg(uid)}/schedule/today`);
+  const data = await getData(`/teachers/${seg(uid)}/schedule/today`);
   return normalizeScheduleResponse(data);
 };
 
@@ -159,7 +174,7 @@ export const getTeacherSchedule = async (
   end: string,
   options: QueryOptions = {},
 ): Promise<ScheduleResponse> => {
-  const { data } = await api.get(
+  const data = await getData(
     `/teachers/${seg(uid)}/schedule/${seg(start)}/${seg(end)}`,
     freshParams(options),
   );
@@ -173,7 +188,7 @@ export const getRoomSchedule = async (
   end: string,
   options: QueryOptions = {},
 ): Promise<ScheduleResponse> => {
-  const { data } = await api.get(
+  const data = await getData(
     `/rooms/${seg(roomId)}/schedule/${seg(start)}/${seg(end)}`,
     freshParams(options),
   );
@@ -183,6 +198,6 @@ export const getRoomSchedule = async (
 // ── Служебное ─────────────────────────────────────────────
 /** Время последнего обновления расписания на сервере. */
 export const getScheduleUpdate = async (): Promise<UpdateResponse> => {
-  const { data } = await api.get("/update");
+  const data = await getData("/update");
   return normalizeUpdateResponse(data);
 };

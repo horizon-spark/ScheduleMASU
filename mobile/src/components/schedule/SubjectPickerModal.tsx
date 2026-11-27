@@ -17,7 +17,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { getBuildings, getRooms, searchTeachers } from "../../api/schedule";
 import type { Building, Group, Room, Teacher } from "../../api/types";
-import { colors, fonts, spacing } from "../../constants/theme";
+import { colors, fonts, radii, spacing } from "../../constants/theme";
 import type { ScheduleSubject } from "../../types/schedule";
 import { describeRequestError, getErrorSummary } from "../../utils/apiError";
 import {
@@ -207,8 +207,15 @@ function TeacherTab({ active, onSelect }: SubjectTabProps) {
   const [results, setResults] = useState<Teacher[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [retryNonce, setRetryNonce] = useState(0);
 
   const trimmed = query.trim();
+
+  const retrySearch = () => {
+    setError(null);
+    setLoading(true);
+    setRetryNonce((value) => value + 1);
+  };
 
   const handleQueryChange = (value: string) => {
     setQuery(value);
@@ -255,7 +262,7 @@ function TeacherTab({ active, onSelect }: SubjectTabProps) {
       isActive = false;
       clearTimeout(timer);
     };
-  }, [trimmed]);
+  }, [trimmed, retryNonce]);
 
   return (
     <View style={styles.tabBody}>
@@ -275,7 +282,19 @@ function TeacherTab({ active, onSelect }: SubjectTabProps) {
       ) : loading ? (
         <ActivityIndicator color={colors.primary} style={styles.loader} />
       ) : error ? (
-        <Text style={styles.error}>{error}</Text>
+        <View style={styles.errorBlock}>
+          <Text style={styles.error}>{error}</Text>
+          <Pressable
+            onPress={retrySearch}
+            accessibilityRole="button"
+            style={({ pressed }) => [
+              styles.retryButton,
+              pressed && styles.pressed,
+            ]}
+          >
+            <Text style={styles.retryButtonText}>Повторить</Text>
+          </Pressable>
+        </View>
       ) : (
         <FlatList
           data={results}
@@ -323,8 +342,15 @@ function RoomTab({ active, onSelect }: SubjectTabProps) {
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [retryNonce, setRetryNonce] = useState(0);
 
   const requestSeq = useRef(0);
+
+  const retryBuildings = () => {
+    setError(null);
+    setLoading(true);
+    setRetryNonce((value) => value + 1);
+  };
 
   useEffect(() => {
     let isActive = true;
@@ -350,7 +376,7 @@ function RoomTab({ active, onSelect }: SubjectTabProps) {
     return () => {
       isActive = false;
     };
-  }, []);
+  }, [retryNonce]);
 
   const openBuilding = async (building: Building) => {
     const seq = ++requestSeq.current;
@@ -427,7 +453,19 @@ function RoomTab({ active, onSelect }: SubjectTabProps) {
         {loading ? (
           <ActivityIndicator color={colors.primary} style={styles.loader} />
         ) : error ? (
-          <Text style={styles.error}>{error}</Text>
+          <View style={styles.errorBlock}>
+            <Text style={styles.error}>{error}</Text>
+            <Pressable
+              onPress={() => void openBuilding(selectedBuilding)}
+              accessibilityRole="button"
+              style={({ pressed }) => [
+                styles.retryButton,
+                pressed && styles.pressed,
+              ]}
+            >
+              <Text style={styles.retryButtonText}>Повторить</Text>
+            </Pressable>
+          </View>
         ) : (
           <FlatList
             data={filteredRooms}
@@ -474,7 +512,19 @@ function RoomTab({ active, onSelect }: SubjectTabProps) {
       {loading ? (
         <ActivityIndicator color={colors.primary} style={styles.loader} />
       ) : error ? (
-        <Text style={styles.error}>{error}</Text>
+        <View style={styles.errorBlock}>
+          <Text style={styles.error}>{error}</Text>
+          <Pressable
+            onPress={retryBuildings}
+            accessibilityRole="button"
+            style={({ pressed }) => [
+              styles.retryButton,
+              pressed && styles.pressed,
+            ]}
+          >
+            <Text style={styles.retryButtonText}>Повторить</Text>
+          </Pressable>
+        </View>
       ) : (
         <FlatList
           data={buildings}
@@ -594,6 +644,25 @@ const styles = StyleSheet.create({
     fontSize: 13,
     marginTop: 12,
     textAlign: "center",
+  },
+  errorBlock: {
+    marginTop: spacing.sm,
+    alignItems: "center",
+    paddingHorizontal: spacing.md,
+  },
+  retryButton: {
+    marginTop: spacing.sm,
+    minHeight: 40,
+    justifyContent: "center",
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.lg,
+    borderRadius: radii.pill,
+    backgroundColor: colors.primarySoft,
+  },
+  retryButtonText: {
+    fontFamily: fonts.bodySemibold,
+    color: colors.primary,
+    fontSize: 13,
   },
   list: { flex: 1, marginTop: 8 },
   listContent: { paddingBottom: 8 },

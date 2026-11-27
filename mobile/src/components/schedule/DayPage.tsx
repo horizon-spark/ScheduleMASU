@@ -1,6 +1,7 @@
 // src/components/schedule/DayPage.tsx
 import { Ionicons } from "@expo/vector-icons";
 import {
+  Pressable,
   RefreshControl,
   ScrollView,
   StyleSheet,
@@ -58,6 +59,16 @@ export function DayPage({
             <Text style={styles.emptyHint}>
               Выберите другой день или обновите расписание
             </Text>
+            <Pressable
+              onPress={onRefresh}
+              accessibilityRole="button"
+              style={({ pressed }) => [
+                styles.refreshButton,
+                pressed && styles.pressed,
+              ]}
+            >
+              <Text style={styles.refreshText}>Обновить</Text>
+            </Pressable>
           </View>
         ) : (
           lessons.map((item, index) => (
@@ -107,6 +118,20 @@ const styles = StyleSheet.create({
     textAlign: "center",
     maxWidth: 260,
   },
+  refreshButton: {
+    marginTop: spacing.md,
+    minHeight: 40,
+    justifyContent: "center",
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.lg,
+    borderRadius: 999,
+    backgroundColor: colors.primarySoft,
+  },
+  refreshText: {
+    ...typography.captionStrong,
+    color: colors.primary,
+  },
+  pressed: { opacity: 0.7 },
   updated: {
     fontFamily: fonts.body,
     fontSize: 11,
